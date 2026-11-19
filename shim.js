@@ -85,6 +85,15 @@
     const sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"; sc.integrity = "sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug"; sc.crossOrigin = "anonymous"; sc.onload = go; document.head.appendChild(sc);
   }
   if (CFG) startRealtime();
+  // A founder only needs live plan edits from their own group; skip fetching plans of other groups (the 60 s check still refreshes the list).
+  const inMyGroup = (id) => {
+    const fid = String(id).split("__")[1], me = founderId();
+    if (!fid || !me || fid === me) return true;
+    const gp = cget("c:groupsPublished"), d = gp && (gp.find((x) => x.id === "gtm") || {}).data;
+    if (!d || !d.groups) return true;
+    const gid = (m) => (m && m.id) || m, g = d.groups.find((x) => (x.members || []).some((m) => gid(m) === me));
+    return !g || (g.members || []).some((m) => gid(m) === fid);
+  };
   function docRef(coll, id) {
     const ref = {
       async get() {
@@ -109,7 +118,7 @@
         let cur = null;
         const arr = () => Object.keys(cur).map((id) => ({ id, data: cur[id] }));
         return watch(async () => { const a = (await ref.get()).docs.map((d) => ({ id: d.id, data: d.data() })); cur = Object.fromEntries(a.map((x) => [x.id, x.data])); return a; }, (a) => cb(rows(a)), errCb, "c:" + coll,
-          CFG && coll !== "roster" && coll !== "manifest" ? async (id) => { if (!cur) return null; const r = await api("GET", "/api/doc/" + coll + "/" + encodeURIComponent(id)); if (r.exists) cur[id] = r.data; else delete cur[id]; return arr(); } : null);
+          CFG && coll !== "roster" && coll !== "manifest" ? async (id) => { if (!cur) return null; if (coll === "plans" && !ADMIN && !inMyGroup(id)) return arr(); const r = await api("GET", "/api/doc/" + coll + "/" + encodeURIComponent(id)); if (r.exists) cur[id] = r.data; else delete cur[id]; return arr(); } : null);
       },
     };
     return ref;
