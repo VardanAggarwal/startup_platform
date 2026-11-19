@@ -52,7 +52,7 @@
   const ckey = (k) => "wsc:" + who() + ":" + k;
   const cget = (k) => { try { const s = localStorage.getItem(ckey(k)); return s ? JSON.parse(s) : null; } catch (e) { return null; } };
   const cput = (k, v) => { try { localStorage.setItem(ckey(k), JSON.stringify(v)); } catch (e) {} };
-  const clearCache = () => { try { Object.keys(localStorage).filter((k) => k.indexOf("wsc:") === 0).forEach((k) => localStorage.removeItem(k)); } catch (e) {} };
+  const clearCache = () => { try { Object.keys(localStorage).filter((k) => k.indexOf("wsc:") === 0 && k !== "wsc:roster").forEach((k) => localStorage.removeItem(k)); } catch (e) {} };
   const ticks = new Set();
   // Tab focus / page change only refetch what has not been fetched in the last 20 s (the Refresh button always refetches everything).
   const COOL = 20000;
@@ -136,17 +136,18 @@
   function overlay(html) { let o = document.getElementById("ws-ov"); if (o) o.remove(); o = document.createElement("div"); o.id = "ws-ov"; o.style.cssText = css; o.innerHTML = html; document.body.appendChild(o); return o; }
   function chip(text, fn) { if (document.getElementById("ws-out")) return; const b = document.createElement("button"); b.id = "ws-out"; b.textContent = text; b.style.cssText = "position:fixed;left:12px;bottom:12px;z-index:9000;min-height:36px;padding:0 12px;border-radius:18px;border:1px solid #9aa;background:var(--card,#fff);color:inherit;font-size:13px"; b.onclick = fn; document.body.appendChild(b); }
   function refreshChip() { if (!CFG || document.getElementById("ws-ref")) return; const b = document.createElement("button"); b.id = "ws-ref"; b.textContent = "↻ Refresh"; b.style.cssText = "position:fixed;right:12px;bottom:64px;z-index:9000;min-height:36px;padding:0 12px;border-radius:18px;border:1px solid #9aa;background:var(--card,#fff);color:inherit;font-size:13px"; b.onclick = () => { b.textContent = "Refreshing…"; refreshAll(true); setTimeout(() => (b.textContent = "↻ Refresh"), 1200); }; document.body.appendChild(b); }
-  async function pickFounder() {
+  async function pickFounder(switching) {
     if (document.getElementById("ws-ov")) return;
     const srt = (l) => l.sort((a, b) => a.name.localeCompare(b.name));
     let list = []; try { const c = localStorage.getItem("wsc:roster"); if (c) list = srt(JSON.parse(c)); } catch (e) {}
-    if (!list.length) try { list = srt(await api("GET", "/api/roster")); localStorage.setItem("wsc:roster", JSON.stringify(list)); } catch (e) {}
-    const o = overlay('<div style="width:100%;max-width:440px;display:grid;gap:12px"><h1 style="font:600 26px/1.2 Bricolage Grotesque,Inter,sans-serif;margin:0">Who are you?</h1><p style="margin:0;font-size:14px;opacity:.8">Pick your name. This is a test build, so there is no sign-in yet.</p><input id="ws-q" type="search" placeholder="Search your name" style="' + inp + '"><div id="ws-list" style="display:grid;gap:8px"></div></div>');
+    let fresh = false; if (!list.length) try { list = srt(await api("GET", "/api/roster")); fresh = true; localStorage.setItem("wsc:roster", JSON.stringify(list)); } catch (e) {}
+    const o = overlay('<div style="width:100%;max-width:440px;display:grid;gap:12px"><h1 style="font:600 26px/1.2 Bricolage Grotesque,Inter,sans-serif;margin:0">Who are you?</h1><p style="margin:0;font-size:14px;opacity:.8">Pick your name. This is a test build, so there is no sign-in yet.</p>' + (switching ? '<button id="ws-cancel" type="button" style="min-height:44px;border:1px solid #9aa;border-radius:10px;background:transparent;color:inherit;font-size:15px">Cancel, stay as I am</button>' : "") + '<input id="ws-q" type="search" placeholder="Search your name" style="' + inp + '"><div id="ws-list" style="display:grid;gap:8px"></div></div>');
     const box = o.querySelector("#ws-list");
     const draw = (q) => { const f = list.filter((p) => p.name.toLowerCase().includes(q.toLowerCase())); box.innerHTML = f.length ? f.map((p) => '<button data-id="' + esc(p.id) + '" style="text-align:left;min-height:52px;padding:8px 14px;border:1px solid #9aa;border-radius:10px;background:var(--card,#fff);color:inherit;font-size:15px"><b>' + esc(p.name) + '</b><br><span style="font-size:13px;opacity:.75">' + esc(p.program) + "</span></button>").join("") : '<p style="font-size:14px">' + (list.length ? "No match." : "The founder list could not be loaded. Is server.js running?") + "</p>"; };
-    draw(""); api("GET", "/api/roster").then((l) => { try { localStorage.setItem("wsc:roster", JSON.stringify(l)); } catch (e) {} if (JSON.stringify(srt(l.slice())) !== JSON.stringify(list)) { list = srt(l); draw(o.querySelector("#ws-q").value); } }).catch(() => {});
+    draw(""); (fresh ? Promise.reject() : api("GET", "/api/roster")).then((l) => { try { localStorage.setItem("wsc:roster", JSON.stringify(l)); } catch (e) {} if (JSON.stringify(srt(l.slice())) !== JSON.stringify(list)) { list = srt(l); draw(o.querySelector("#ws-q").value); } }).catch(() => {});
     o.querySelector("#ws-q").addEventListener("input", (e) => draw(e.target.value));
-    box.addEventListener("click", (e) => { const b = e.target.closest("button[data-id]"); if (!b) return; store("ws_founder", b.dataset.id); location.reload(); });
+    box.addEventListener("click", (e) => { const b = e.target.closest("button[data-id]"); if (!b) return; if (switching && b.dataset.id === founderId()) { o.remove(); return; } clearCache(); store("ws_founder", b.dataset.id); location.reload(); });
+    if (switching) { const close = () => { o.remove(); document.removeEventListener("keydown", esc2); }; const esc2 = (e) => { if (e.key === "Escape") close(); }; o.querySelector("#ws-cancel").addEventListener("click", close); document.addEventListener("keydown", esc2); }
   }
   function adminLogin() {
     if (document.getElementById("ws-ov")) return;
@@ -165,7 +166,7 @@
         chip("Sign out", () => { clearCache(); store("ws_admin", null); location.reload(); });
       } else {
         if (!founderId()) { await pickFounder(); return null; }
-        chip("Not you? Switch person", () => { clearCache(); store("ws_founder", null); location.reload(); });
+        chip("Not you? Switch person", () => pickFounder(true));
       }
       refreshChip();
       return name === "db" ? db : name === "user" ? user : null;

@@ -1311,7 +1311,7 @@ async function initOrg(user){
   $("gate").hidden=true;$("console").hidden=false;
   db.doc("stage/gtm").onSnapshot(s=>{stageDoc=s.exists?s.data():null;renderStage();},()=>{});
   if(window.WORKSHOP_MODE==="admin"){myManifest={rosterId:null,name:window.WORKSHOP_FAC||"Facilitator",startup:""};const vr=$("view-rate");$("p-frate").appendChild(vr);vr.hidden=false;}
-  try{const rs=await db.collection("roster").get();roster=rs.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>a.name.localeCompare(b.name));}catch(e){}
+  if(window.WORKSHOP_MODE==="admin")try{const rs=await db.collection("roster").get();roster=rs.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>a.name.localeCompare(b.name));}catch(e){}
   db.collection("manifest").onSnapshot(s=>{all=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderOrg();renderExits();},()=>{$("rows").innerHTML='<tr><td colspan="8" class="status">Could not load responses.</td></tr>';});
   db.collection("ratings").onSnapshot(s=>{ratings={};s.docs.forEach(d=>{ratings[d.id]=d.data();});renderOrg();},()=>{});
   db.collection("peerRatings").onSnapshot(s=>{pr=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderRounds();renderGroups();},()=>{});
@@ -1330,7 +1330,7 @@ async function initOrg(user){
   me=user;
   if(!db||!user){route();return;}
   uid=await user.id();
-  try{const rs=await db.collection("roster").get();
+  if(window.WORKSHOP_MODE==="admin")try{const rs=await db.collection("roster").get();
     roster=rs.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>a.name.localeCompare(b.name));
     rosterMap={};roster.forEach(r=>{rosterMap[r.id]=r;});
     $("who").innerHTML='<option value="">Select your name</option>'+roster.map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join("");
