@@ -126,7 +126,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:500}
 th small{display:block;text-transform:none;letter-spacing:0;white-space:normal;font-weight:400;font-size:12px;min-width:110px}
 </style>
 
-<div class="wrap" id="wrap">
+<div class="wrap" id="wrap" hidden>
   <header>
     <div>
       <div class="eyebrow">Susegad Camp · build3 bfb &amp; bia</div>
@@ -136,7 +136,8 @@ th small{display:block;text-transform:none;letter-spacing:0;white-space:normal;f
     <div class="tabs" id="fnav" hidden><button data-h="work" aria-selected="true">Worksheets</button><button data-h="rate" aria-selected="false">Rate pitches</button><button data-h="groups" aria-selected="false">My groups</button><button data-h="scores" aria-selected="false">My scores</button></div>
   </header>
 
-  <div id="view-mine">
+  <div id="boot" aria-busy="true" aria-label="Loading" class="block" style="display:grid;gap:12px;margin-top:16px"><div style="height:28px;width:40%;border-radius:8px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div><div style="height:44px;border-radius:10px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div><div style="height:44px;border-radius:10px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div><div style="height:84px;border-radius:10px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div></div><style>@keyframes wsk{from{opacity:.45}to{opacity:1}}</style>
+  <div id="view-mine" hidden>
     <div id="signin" class="notice" hidden>Sign in to claude.ai to fill your manifest. Your answers are saved to your account and you can edit them until the camp starts.</div>
     <form id="form" hidden autocomplete="off">
       <section class="block">
@@ -659,6 +660,7 @@ $("otabs").addEventListener("click",e=>{
 let me=null,orgStarted=false;
 function route(){
   const h=location.hash.slice(1),isOrg=window.WORKSHOP_MODE==="admin";
+  const bt=$("boot");if(bt)bt.hidden=true;
   document.querySelector(".wrap").hidden=isOrg;$("org").hidden=!isOrg;
   if(isOrg){if(!orgStarted){orgStarted=true;initOrg(me);}return;}
   const v=h==="rate"||h==="groups"||h==="work"||h==="scores"?h:"work";
@@ -1328,7 +1330,6 @@ async function initOrg(user){
   me=user;
   if(!db||!user){route();return;}
   uid=await user.id();
-  $("form").hidden=false;
   try{const rs=await db.collection("roster").get();
     roster=rs.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>a.name.localeCompare(b.name));
     rosterMap={};roster.forEach(r=>{rosterMap[r.id]=r;});
