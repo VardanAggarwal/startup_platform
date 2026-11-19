@@ -1,0 +1,9 @@
+# Static site: only the pages are published (no server.js, scripts or data).
+[build]
+  command = "mkdir -p dist && cp index.html founder.html admin.html shim.js config.js dist/"
+  publish = "dist"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-cache"

@@ -1,0 +1,5 @@
+{
+  "buildCommand": "mkdir -p dist && cp index.html founder.html admin.html shim.js config.js dist/",
+  "outputDirectory": "dist",
+  "headers": [{ "source": "/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }]
+}
