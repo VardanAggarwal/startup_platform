@@ -115,7 +115,7 @@ REVOKE ALL ON FUNCTION public.workshop_hdr(text), public.workshop_is_admin(), pu
 GRANT EXECUTE ON FUNCTION public.workshop_hdr(text), public.workshop_is_admin(), public.workshop_actor(), public.workshop_can(text,text,boolean),
   public.workshop_kv_patch(text,text,jsonb), public.workshop_roster(), public.workshop_me(), public.workshop_manifests(),
   public.workshop_admin_login(text,text), public.workshop_reset() TO anon, authenticated;
--- workshop_set_admin and workshop_startup stay service-role only (run workshop_set_admin from the SQL editor / MCP).
+-- workshop_set_admin, workshop_startup, workshop_hdr and workshop_actor are NOT callable by anon (revoked in the HARDENING block below).
 
 -- LIVE UPDATES: every change to workshop_kv sends a tiny public Realtime broadcast {c: collection, id}. No data is in the ping.
 -- Pages listen on channel "workshop" and fetch only that one document, so nothing polls the database.
@@ -131,3 +131,45 @@ END $$;
 REVOKE ALL ON FUNCTION public.workshop_notify() FROM PUBLIC, anon, authenticated;
 DROP TRIGGER IF EXISTS workshop_kv_notify ON public.workshop_kv;
 CREATE TRIGGER workshop_kv_notify AFTER INSERT OR UPDATE OR DELETE ON public.workshop_kv FOR EACH ROW EXECUTE FUNCTION public.workshop_notify();
+
+-- HARDENING (applied as migration workshop_security_hardening).
+-- Supabase grants EXECUTE on new functions to anon by default and REVOKE ... FROM PUBLIC does not remove that, so revoke explicitly.
+REVOKE EXECUTE ON FUNCTION public.workshop_set_admin(text,text), public.workshop_startup(text), public.workshop_hdr(text), public.workshop_actor() FROM PUBLIC, anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated;
+
+-- Login throttle: 10 failures in 5 minutes for an email blocks further attempts until the window passes.
+CREATE TABLE IF NOT EXISTS public.workshop_login_fail (email text NOT NULL, at timestamptz NOT NULL DEFAULT now());
+ALTER TABLE public.workshop_login_fail ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.workshop_login_fail FROM anon, authenticated;
+CREATE INDEX IF NOT EXISTS workshop_login_fail_idx ON public.workshop_login_fail (email, at);
+CREATE OR REPLACE FUNCTION public.workshop_admin_login(p_email text, p_password text) RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
+DECLARE t uuid; e text := lower(coalesce(p_email, ''));
+BEGIN
+  DELETE FROM public.workshop_login_fail WHERE at < now() - interval '1 hour';
+  IF (SELECT count(*) FROM public.workshop_login_fail WHERE email = e AND at > now() - interval '5 minutes') >= 10 THEN RETURN NULL; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.workshop_admins WHERE email = e AND pw_hash = crypt(coalesce(p_password, ''), pw_hash)) THEN
+    INSERT INTO public.workshop_login_fail (email) VALUES (e);
+    RETURN NULL;
+  END IF;
+  DELETE FROM public.workshop_login_fail WHERE email = e;
+  DELETE FROM public.workshop_sessions WHERE created_at < now() - interval '2 days';
+  INSERT INTO public.workshop_sessions (email) VALUES (e) RETURNING token INTO t;
+  RETURN t::text;
+END $$;
+CREATE OR REPLACE FUNCTION public.workshop_set_admin(p_email text, p_password text) RETURNS void
+LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
+  INSERT INTO public.workshop_admins (email, pw_hash) VALUES (lower(p_email), crypt(p_password, gen_salt('bf', 10)))
+  ON CONFLICT (email) DO UPDATE SET pw_hash = excluded.pw_hash
+$$;
+REVOKE EXECUTE ON FUNCTION public.workshop_set_admin(text,text) FROM PUBLIC, anon, authenticated;
+CREATE OR REPLACE FUNCTION public.workshop_kv_patch(p_coll text, p_id text, p_patch jsonb) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NOT public.workshop_can(p_coll, p_id, true) THEN RAISE EXCEPTION 'denied' USING ERRCODE = '42501'; END IF;
+  IF p_patch IS NULL OR jsonb_typeof(p_patch) <> 'object' THEN RAISE EXCEPTION 'patch must be an object' USING ERRCODE = '22023'; END IF;
+  UPDATE public.workshop_kv SET data = data || p_patch, updated_at = now() WHERE collection = p_coll AND id = p_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'missing' USING ERRCODE = 'P0002'; END IF;
+END $$;
+-- Set the organizer password from the SQL editor (never in a migration, which is stored in plain text):
+--   select public.workshop_set_admin('admin@example.com', 'a-long-random-password');

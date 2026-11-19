@@ -15,7 +15,7 @@
     const call = async (m, u, b, extra) => {
       let r, t;
       for (let i = 0; ; i++) { // busy moments (everyone opening at once): retry network errors, 429 and 5xx with a growing, random wait
-        try { r = await fetch(u, { method: m, headers: Object.assign({}, h, extra), body: b === undefined ? undefined : JSON.stringify(b) }); t = await r.text(); if (r.ok || (r.status < 500 && r.status !== 429) || i >= 4) break; } catch (e) { if (i >= 4) throw e; }
+        try { const ac = new AbortController(), to = setTimeout(() => ac.abort(), 20000); try { r = await fetch(u, { method: m, headers: Object.assign({}, h, extra), body: b === undefined ? undefined : JSON.stringify(b), signal: ac.signal }); t = await r.text(); } finally { clearTimeout(to); } if (r.ok || (r.status < 500 && r.status !== 429) || i >= 4) break; } catch (e) { if (i >= 4) throw e; }
         await new Promise((ok) => setTimeout(ok, 400 * Math.pow(2, i) + Math.random() * 600));
       }
       if (!r.ok) { let c = ""; try { c = JSON.parse(t).code; } catch (e) {} const e = new Error("HTTP " + r.status); e.status = c === "P0002" ? 404 : r.status; throw e; }
@@ -52,6 +52,7 @@
   const ckey = (k) => "wsc:" + who() + ":" + k;
   const cget = (k) => { try { const s = localStorage.getItem(ckey(k)); return s ? JSON.parse(s) : null; } catch (e) { return null; } };
   const cput = (k, v) => { try { localStorage.setItem(ckey(k), JSON.stringify(v)); } catch (e) {} };
+  const clearCache = () => { try { Object.keys(localStorage).filter((k) => k.indexOf("wsc:") === 0).forEach((k) => localStorage.removeItem(k)); } catch (e) {} };
   const ticks = new Set();
   let lastAll = 0;
   const refreshAll = (force) => { const n = Date.now(); if (!force && n - lastAll < 3000) return; lastAll = n; ticks.forEach((t) => t.run()); };
@@ -72,15 +73,16 @@
     if (!p || !p.c) return; const k = p.c + "/" + p.id; clearTimeout(pend[k]);
     pend[k] = setTimeout(() => { delete pend[k]; bump(p.c, p.id); }, 300 + Math.random() * 900); // coalesce rapid saves, spread 50 pages apart
   }
+  let seenSub = false;
   function startRealtime() {
     const go = () => {
       try {
         const rt = window.supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: false, autoRefreshToken: false }, realtime: { params: { eventsPerSecond: 10 } } });
-        rt.channel("workshop").on("broadcast", { event: "changed" }, (m) => onPing(m.payload)).subscribe((st) => { if (st === "SUBSCRIBED") refreshAll(true); });
+        rt.channel("workshop").on("broadcast", { event: "changed" }, (m) => onPing(m.payload)).subscribe((st) => { if (st === "SUBSCRIBED") { if (seenSub) setTimeout(() => refreshAll(true), Math.random() * 4000); seenSub = true; } });
       } catch (e) {}
     };
     if (window.supabase) return go();
-    const sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"; sc.onload = go; document.head.appendChild(sc);
+    const sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"; sc.integrity = "sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug"; sc.crossOrigin = "anonymous"; sc.onload = go; document.head.appendChild(sc);
   }
   if (CFG) startRealtime();
   function docRef(coll, id) {
@@ -151,10 +153,10 @@
         if (!facName()) { const n = (window.prompt("Your name (shown on your ratings)") || "Facilitator").trim(); store("ws_facname", n); }
         window.WORKSHOP_FAC = facName();
         try { await api("GET", "/api/manifests"); adminOk = true; } catch (e) { store("ws_admin", null); adminLogin(); return null; }
-        chip("Sign out", () => { store("ws_admin", null); location.reload(); });
+        chip("Sign out", () => { clearCache(); store("ws_admin", null); location.reload(); });
       } else {
         if (!founderId()) { await pickFounder(); return null; }
-        chip("Not you? Switch person", () => { store("ws_founder", null); location.reload(); });
+        chip("Not you? Switch person", () => { clearCache(); store("ws_founder", null); location.reload(); });
       }
       refreshChip();
       return name === "db" ? db : name === "user" ? user : null;

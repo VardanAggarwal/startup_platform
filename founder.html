@@ -562,7 +562,7 @@ $("r-release-all").addEventListener("click",async()=>{
       const ref=db.doc("results/"+m.id),cur=await ref.get(),rs=Object.assign({},cur.exists?cur.data().rounds:{});
       rs[r.id]=Object.assign({session:r.session,phase:r.phase||"before",n:sm.n,overall:sm.overall,comments:vs.filter(v=>v.comment).map(v=>v.comment)},Object.fromEntries(critFor(r.session).map(c=>[c[0],sm[c[0]]])));
       await ref.set({rounds:rs});
-      await db.doc("rounds/"+r.id).set(Object.assign({},r,{id:undefined,released:true}));n++;
+      await db.doc("rounds/"+r.id).update({released:true});n++;
     }
     setStatus(st,"Released "+n+" rounds."+(skipOpen?" "+skipOpen+" still open, close them first.":"")+(skipNoM?" "+skipNoM+" skipped, no manifest.":""),skipOpen||skipNoM?"err":"ok");
   }catch(err){setStatus(st,"Some rounds did not save. Try again.","err");}
@@ -571,7 +571,7 @@ $("rounds-list").addEventListener("click",async e=>{
   const b=e.target.closest("button[data-act]");if(!b)return;
   const r=rounds.find(x=>x.id===b.dataset.id),st=$("r-status");if(!r)return;
   try{
-    if(b.dataset.act==="toggle"){await db.doc("rounds/"+r.id).set(Object.assign({},r,{id:undefined,status:r.status==="open"?"closed":"open"}));setStatus(st,r.status==="open"?"Round closed.":"Round reopened.","ok");}
+    if(b.dataset.act==="toggle"){await db.doc("rounds/"+r.id).update({status:r.status==="open"?"closed":"open"});setStatus(st,r.status==="open"?"Round closed.":"Round reopened.","ok");}
     else{
       const m=all.find(x=>x.rosterId===r.founderId);
       if(!m){setStatus(st,r.name+" has not submitted a manifest yet, so results cannot be released.","err");return;}
@@ -579,7 +579,7 @@ $("rounds-list").addEventListener("click",async e=>{
       const ref=db.doc("results/"+m.id),cur=await ref.get(),rs=Object.assign({},cur.exists?cur.data().rounds:{});
       rs[r.id]=Object.assign({session:r.session,phase:r.phase||"before",n:sm.n,overall:sm.overall,comments:vs.filter(v=>v.comment).map(v=>v.comment)},Object.fromEntries(critFor(r.session).map(c=>[c[0],sm[c[0]]])));
       await ref.set({rounds:rs});
-      await db.doc("rounds/"+r.id).set(Object.assign({},r,{id:undefined,released:true}));
+      await db.doc("rounds/"+r.id).update({released:true});
       setStatus(st,"Released to "+r.name+".","ok");
     }
   }catch(err){setStatus(st,"That did not save.","err");}
@@ -806,7 +806,7 @@ async function seatClick(e){
   if(st){
     const s=st.dataset.start,g=myGroupFor(s);if(!g||!cards[s])return;
     try{const nd=Object.assign({},cards.gtmB||{},{session:s,founderId:myManifest.rosterId,name:myManifest.name,startup:myManifest.startup,n:g.n,status:"live",card:cards[s],startedAt:Date.now()});
-      await db.doc("plans/"+planId(s,myManifest.rosterId)).set(nd);plans[planId(s,myManifest.rosterId)]=nd;
+      const pref=db.doc("plans/"+planId(s,myManifest.rosterId)),ex=await pref.get();if(ex.exists){plans[planId(s,myManifest.rosterId)]=ex.data();}else{await pref.set(nd);plans[planId(s,myManifest.rosterId)]=nd;}
       openPlan=planId(s,myManifest.rosterId);showSheet(openPlan);}catch(err){}
   }
 }

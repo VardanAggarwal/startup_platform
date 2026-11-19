@@ -4,7 +4,7 @@
 `node server.js` then open http://localhost:8765 (`founder.html`, `admin.html`).
 - Database: SQLite at `data/workshop.db` (table `kv`: coll, id, JSON; override dir with `DATA_DIR`). Reset: stop server, delete `workshop.db*`. Backup: `sqlite3 data/workshop.db ".backup copy.db"`. Needs Node 22+. Founder list: `data/roster.json` (name, program, phone from the Google Sheet).
 - Organizer login: `admin@local` / `susegad` (override with ADMIN_EMAIL / ADMIN_PASSWORD).
-- `shim.js` is the local backend client. `shim-supabase.js` is the Supabase version; to use it, rename it to `shim.js`, add the supabase-js script tag and run `schema.sql`.
+- `shim.js` is the client: Supabase when `config.js` has a URL, otherwise the local `server.js`.
 
 ## Supabase version
 Static site. Same Supabase project and database as the portal.
@@ -22,7 +22,7 @@ Static site. Same Supabase project and database as the portal.
 Run the LOCKDOWN lines at the bottom of `schema.sql`, then add real founder sign-in.
 
 ## Setup after cloning
-- `data/` is not in git (it holds founder phone numbers and the live database). Create `data/roster.json` like `data/roster.example.json`: `[{ "id", "name", "program", "phone" }]`. Ids are `"f" + first 10 hex of sha256("susegad-ws|" + phone)`. Phone is never served.
+- `data/` is not in git (it holds founder phone numbers and the live database). Create `data/roster.json` like `data/roster.example.json`: `[{ "id", "name", "program", "phone" }]`. Use random ids (`"f" + 10 random hex`), never ids derived from phone numbers, which can be brute-forced. Phone is never served.
 - Run `node server.js` (Node 22+). Admin login: env `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
 ## Supabase mode (default when `config.js` has a URL)
