@@ -25,15 +25,15 @@ details.sec>.sub{margin-top:10px;font-size:14px}
 <style>
 /* Layout: single centered column for founders; wide table view for organizers. Palette: sea teal + laterite clay on cool sand. */
 :root{
-  --bg:#F2F4F1; --surface:#FFFFFF; --fg:#16231F; --muted:#5B6B65; --line:#D8DED9;
+  --bg:#F2F4F1; --surface:#FFFFFF; --fg:#16231F; --muted:#5B6B65; --line:#D8DED9; --err:#B3261E;
   --accent:#0E6560; --accent-fg:#FFFFFF; --clay:#B8512B; --ok:#1F7A4D; --warn:#A96A00; --soft:#E3EEEB;
   --font-display:"Bricolage Grotesque","Inter",system-ui,sans-serif; --font-body:"Inter",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0F1A18; --surface:#16251F; --fg:#E6EEEA; --muted:#93A59E; --line:#28403A;
+  --bg:#0F1A18; --surface:#16251F; --fg:#E6EEEA; --muted:#93A59E; --line:#28403A; --err:#FF8A80;
   --accent:#4FB5AC; --accent-fg:#06201D; --clay:#E58A62; --ok:#5FCB92; --warn:#E0A545; --soft:#1B332E; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0F1A18; --surface:#16251F; --fg:#E6EEEA; --muted:#93A59E; --line:#28403A;
+  --bg:#0F1A18; --surface:#16251F; --fg:#E6EEEA; --muted:#93A59E; --line:#28403A; --err:#FF8A80;
   --accent:#4FB5AC; --accent-fg:#06201D; --clay:#E58A62; --ok:#5FCB92; --warn:#E0A545; --soft:#1B332E; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;
@@ -47,6 +47,15 @@ header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-
 .tabs{display:flex;gap:4px;background:var(--soft);padding:4px;border-radius:8px}
 .tabs button{border:0;background:transparent;color:var(--fg);padding:7px 14px;border-radius:6px;font:inherit;font-weight:500;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+/* phones: the tab bar never widens the page */
+header .tabs{max-width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+header .tabs::-webkit-scrollbar{display:none}
+.tabs button{white-space:nowrap;flex:0 0 auto}
+@media (max-width:480px){.tabs button{padding:8px 10px;font-size:14px}}
+.verr{color:var(--err);font-size:13px;font-weight:500}
+[aria-invalid="true"]{border-color:var(--err)!important;outline-color:var(--err)}
+input[type=number],input[type=date]{min-height:44px}
+
 section.block{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px;display:flex;flex-direction:column;gap:16px}
 .block>h2+.sub{margin-top:-8px}
 label.f{display:flex;flex-direction:column;gap:6px;font-weight:500;min-width:0}
@@ -477,17 +486,32 @@ function renderResults(){const el=$("rate-results");if(el)el.innerHTML=resultsHt
 
 /* founder: my groups */
 function loadGroups(){
+  subPlans();ensureCards();
   if(!groupsStarted){groupsStarted=true;db.collection("groupsPublished").onSnapshot(s=>{pubGroups={};s.docs.forEach(d=>{pubGroups[d.id]=d.data();});renderMyGroups();renderSeats();renderExit();renderRate();},()=>{});}
   renderMyGroups();
 }
+$("groups-body").addEventListener("click",e=>{
+  const b=e.target.closest("[data-gopen],[data-gstart],[data-gwork]");if(!b)return;
+  pendingSeat=b.dataset.gopen?{open:b.dataset.gopen}:(b.dataset.gstart?{start:b.dataset.gstart}:{});
+  openPlan=null;location.hash="work";
+});
 function renderMyGroups(){
   const box=$("groups-body");if(!box)return;
   if(!myManifest){box.innerHTML='<div class="notice">Your founder profile was not found. Register in the portal first.</div>';return;}
   const out=["gtm"].map(s=>{const d=pubGroups[s];if(!d)return"";
     const g=(d.groups||[]).find(g=>(g.members||[]).some(m=>m.id===myManifest.rosterId));if(!g)return"";
-    return `<section class="block" style="margin-bottom:16px"><h2>${SES[s]} session · Group ${esc(g.n)}</h2>
-    ${g.members.map(m=>`<div><b>${esc(m.name)}</b>${m.id===myManifest.rosterId?' <span class="tag">you</span>':""}<div class="status">${esc(m.startup)} · ${esc(m.program)}${(m.offer||[]).length?" · strong at "+esc(m.offer.join(", ")):""}</div></div>`).join("")}</section>`;}).join("");
+    const rows=g.members.map(m=>{
+      const id=planId(s,m.id),p=plans[id],mine=m.id===myManifest.rosterId,st=p?(p.status==="done"?"Done":"Live now"):"Not started";
+      let btn="";
+      if(p)btn=`<button class="${mine&&p.status!=="done"?"primary":"ghost"}" data-gopen="${esc(id)}">${mine?(p.status==="done"?"View my worksheet":"Continue my hot seat"):"Open worksheet"}</button>`;
+      else if(mine)btn=(cards[s]&&cards[s][CARD[s][0][0]])?`<button class="primary" data-gstart="${s}">Start my hot seat</button>`:'<button class="ghost" data-gwork="1">Fill Worksheet A first</button>';
+      return `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b>${esc(m.name)}</b>${mine?' <span class="tag">you</span>':""}<div class="status">${esc(m.startup)} · ${esc(m.program)}${(m.offer||[]).length?" · strong at "+esc(m.offer.join(", ")):""} · ${st}</div></div>${btn}</div>`;}).join("");
+    return `<section class="block" style="margin-bottom:16px"><h2>${SES[s]} session · Group ${esc(g.n)}</h2>${rows}</section>`;}).join("");
   box.innerHTML=out||'<div class="notice">Groups are not published yet. They will show here once the facilitators share them.</div>';
+}
+async function ensureCards(){
+  if(cardsLoaded||!db||!uid)return;cardsLoaded=true;
+  try{const s=await db.doc("cards/"+uid).get();if(s.exists)cards=s.data();syncStartup();renderMyGroups();}catch(e){cardsLoaded=false;}
 }
 
 /* organizer: shared helpers */
@@ -672,11 +696,11 @@ function route(){
 $("fnav").addEventListener("click",e=>{const b=e.target.closest("button[data-h]");if(b){if(!b.dataset.h){location.href="/manifest";return;}location.hash=b.dataset.h;}});
 window.addEventListener("hashchange",route);
 /* ---- worksheets: problem card, hot-seat plan, facilitator checks ---- */
-let stageB=false,plans={},cards={},planChecks={},workStarted=false,plansSub=false,openPlan=null,cardSession="gtm",timer={t:0,run:false,id:null};
+let stageB=false,pendingSeat=null,cardsLoaded=false,plans={},cards={},planChecks={},workStarted=false,plansSub=false,openPlan=null,cardSession="gtm",timer={t:0,run:false,id:null};
 const CARD={
   gtm:[["a_startup","My startup's name","in"],["a_sell","What I sell, in one line, as a customer would say it","in"],["a_how","The way I get customers today is…","ta"],["a_headache","My biggest GTM headache right now","ta"],["a_path","Do I have customers?","sel",null,["I have customers","I don't have customers yet"]],
-    ["a_last10","My top 3 sources of customers, and roughly what share each brings","ta","1","One per line: source, share of customers (%), could I do more of it next week (y/n)"],["a_n1","Customers to date","in","1"],["a_n5","Leads → paying customers (%)","in","1"],["a_n6","What it costs me to get one customer (₹)","in","1"],
-    ["a_f_who","Who exactly are my first 100? (role, type of business or person, place)","ta","2"],["a_f_names","Name 3 of them: real people or businesses","ta","2"],["a_f_spoken","How many have I spoken to about the problem?","in","2"]],
+    ["a_last10","My top 3 sources of customers, and roughly what share each brings","ta","1","One per line: source, share of customers (%), could I do more of it next week (y/n)"],["a_n1","Customers to date","num","1","int"],["a_n5","Leads → paying customers (%)","num","1","pct"],["a_n6","What it costs me to get one customer (₹)","num","1","money"],
+    ["a_f_who","Who exactly are my first 100? (role, type of business or person, place)","ta","2"],["a_f_names","Name 3 of them: real people or businesses","ta","2"],["a_f_spoken","How many have I spoken to about the problem?","num","2","int"]],
   ai:[["c1","The startup in one line"],["c2","The task, workflow or tool I want help with"],["c3","Who does it today and how many hours a week"],["c4","Tools I already use for it"],["c5","What good looks like, and who would check it"],["c6","Limits: budget, data, team"]]};
 const STEPS=[[0,3,"Present","Founder reads the problem card. No interruptions."],[3,8,"Questions only","Ask questions. No advice yet."],[8,18,"Build","Fill the plan, starting from the 90-day goal."],[18,22,"Choose","Founder picks the top three actions."],[22,25,"Read back","Founder reads the plan aloud. Check it against the four tests."]];
 const REQ=["goal","b1_what","b1_measure","m1","m2","m3","weekly","fa_what","fa_date","act1","act2","act3","buddy"];
@@ -686,7 +710,7 @@ const planId=(s,fid)=>s+"__"+fid;
 const myGroupFor=s=>{const d=pubGroups[s];if(!d||!myManifest)return null;return (d.groups||[]).find(g=>(g.members||[]).some(m=>m.id===myManifest.rosterId))||null;};
 function subPlans(){
   if(plansSub)return;plansSub=true;
-  db.collection("plans").onSnapshot(s=>{plans={};s.docs.forEach(d=>{plans[d.id]=d.data();});renderSeats();renderExit();syncPlan();if(orgReady)renderPlans();},()=>{});
+  db.collection("plans").onSnapshot(s=>{plans={};s.docs.forEach(d=>{plans[d.id]=d.data();});renderSeats();renderMyGroups();renderExit();syncPlan();if(orgReady)renderPlans();},()=>{});
 }
 async function loadWork(){
   if(!workStarted){
@@ -703,9 +727,10 @@ async function loadWork(){
     $("card-form").addEventListener("change",e=>{if(e.target.dataset&&e.target.dataset.k==="a_path")applyPath();});
     subResults();
   }
-  if(openPlan){showSheet(openPlan);return;}
+  if(openPlan&&!pendingSeat){showSheet(openPlan);return;}
   $("work-main").hidden=false;$("work-sheet").hidden=true;renderExit();
   renderCard();renderSeats();
+  if(pendingSeat){const p=pendingSeat;pendingSeat=null;const t=document.createElement("button");if(p.open)t.dataset.open=p.open;else if(p.start)t.dataset.start=p.start;if(p.open||p.start)seatClick({target:t});}
 }
 function renderBBox(){
   const el=$("work-b");if(!el)return;
@@ -780,9 +805,12 @@ document.addEventListener("keydown",e=>{const o=$("pitch-full");if(e.key==="Esca
 function syncStartup(){const s=((cards||{}).gtm||{}).a_startup;if(s&&myManifest)myManifest.startup=s;}
 async function saveCard(e){
   if(!e.target.closest("[data-savecard]"))return;
+  const bad=[...$("card-form").querySelectorAll("[data-rule]")].filter(t=>!t.closest("[hidden]")&&!validateEl(t));
+  if(bad.length){setStatus($("card-status"),"Fix the highlighted answer"+(bad.length>1?"s":"")+" first. Nothing was saved.","err");bad[0].focus();return;}
   const v={};$("card-form").querySelectorAll("[data-k]").forEach(t=>{v[t.dataset.k]=t.value.trim();});
   cards=Object.assign({},cards,{[cardSession]:v});
-  try{await db.doc("cards/"+uid).set(cards);syncStartup();setStatus($("card-status"),"Saved.","ok");renderSeats();renderPitch();}catch(err){setStatus($("card-status"),"Could not save.","err");}
+  const pth=v.a_path==="I have customers"?"1":(v.a_path?"2":""),need=CARD.gtm.filter(c=>!c[3]||c[3]===pth),have=need.filter(c=>v[c[0]]).length;
+  try{await db.doc("cards/"+uid).set(cards);syncStartup();setStatus($("card-status"),have===need.length&&pth?"Saved. Worksheet A is complete.":"Saved. "+have+" of "+need.length+" answers filled"+(pth?"":", and choose whether you have customers")+".","ok");renderSeats();renderPitch();}catch(err){setStatus($("card-status"),"Could not save.","err");}
 }
 function renderSeats(){
   const el=$("work-seats");if(!el)return;renderPitch();
@@ -881,6 +909,7 @@ $("view-work").addEventListener("click",async e=>{
 });
 $("view-work").addEventListener("change",async e=>{
   const el=e.target.closest("[data-f]");if(!el||!openPlan)return;
+  if(el.dataset.rule&&!validateEl(el)){setStatus($("sheet-status"),"That answer is not valid, so it was not saved.","err");return;}
   try{await saveField(openPlan,{[el.dataset.f]:el.value.trim()});setStatus($("sheet-status"),"Saved.","ok");}
   catch(err){setStatus($("sheet-status"),"Could not save. Check your connection.","err");}
 });
@@ -898,14 +927,39 @@ const reqOf=(s,p)=>s==="gtm"?GREQ.concat(gT(p)?["m_conv","m_weeks","tf1","tf2","
 const checksOf=s=>s==="gtm"?GCHECKS:CHECKS;
 const planKeysOf=s=>s==="gtm"?GKEYS:PLAN_KEYS;
 function tcfg(){const p=openPlan&&plans[openPlan];if(p&&p.session==="gtm"){const S=GSTEPS.map(x=>x.slice());if(!gT(p))S[0][3]=S[0][3].replace("1, 3 and 5","1, 3 and 4");return{d:1320,s:S};}return{d:1500,s:STEPS};}
+const NUMR={int:'min="0" step="1" inputmode="numeric"',pct:'min="0" max="100" step="any" inputmode="decimal"',money:'min="0" step="any" inputmode="decimal"',pos:'min="1" step="1" inputmode="numeric"'};
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const dateRange=r=>{const t=new Date(),e=new Date();e.setDate(e.getDate()+7);return r==="start"?`min="${ymd(t)}" max="${ymd(e)}"`:`min="${ymd(t)}"`;};
 function fx(c,v,attr){
-  const hint=typeof c[4]==="string"?`<span class="hint">${esc(c[4])}</span>`:"";
+  const isNum=c[2]==="num",isDate=c[2]==="date",r=c[4]||(isNum?"int":"");
+  const hint=!isNum&&!isDate&&typeof c[4]==="string"?`<span class="hint">${esc(c[4])}</span>`:"";
   let ctl;
   if(c[2]==="sel")ctl=`<select ${attr}="${c[0]}"><option value="">Choose</option>${c[4].map(o=>`<option${v===o?" selected":""}>${esc(o)}</option>`).join("")}</select>`;
-  else if(c[2]==="in")ctl=`<input type="text" ${attr}="${c[0]}" value="${esc(v)}">`;
-  else ctl=`<textarea ${attr}="${c[0]}" style="min-height:64px">${esc(v)}</textarea>`;
-  return `<label class="f"${c[3]?` data-path="${c[3]}"`:""}>${esc(c[1])}${hint}${ctl}</label>`;
+  else if(isNum)ctl=`<input type="number" data-rule="${r}" ${NUMR[r]||NUMR.int} enterkeyhint="next" ${attr}="${c[0]}" value="${esc(v)}">`;
+  else if(isDate)ctl=`<input type="date" data-rule="${r}" ${dateRange(r)} ${attr}="${c[0]}" value="${/^\d{4}-\d{2}-\d{2}$/.test(v)?esc(v):""}">`;
+  else if(c[2]==="in")ctl=`<input type="text" maxlength="200" autocomplete="off" ${attr}="${c[0]}" value="${esc(v)}">`;
+  else ctl=`<textarea maxlength="1500" ${attr}="${c[0]}" style="min-height:64px">${esc(v)}</textarea>`;
+  return `<label class="f"${c[3]?` data-path="${c[3]}"`:""}>${esc(c[1])}${hint}${ctl}<span class="verr" role="alert" hidden></span></label>`;
 }
+/* Validation: numbers must be numbers in range, dates must make sense. Invalid answers are flagged under the box and never saved. */
+function validateEl(el){
+  const r=el.dataset&&el.dataset.rule;let msg="";
+  if(r){
+    if(el.validity.badInput)msg=el.type==="date"?"Enter a valid date.":"Numbers only.";
+    else if(el.value!==""&&!el.checkValidity()){const v=el.validity;
+      if(v.rangeUnderflow)msg=el.type==="date"?"Pick today or a later date.":"Use "+el.min+" or more.";
+      else if(v.rangeOverflow)msg=el.type==="date"?"The start date has to be within the next 7 days.":(r==="pct"?"Use a percentage from 0 to 100.":"Use "+el.max+" or less.");
+      else if(v.stepMismatch)msg="Whole numbers only.";
+      else msg="Check this answer.";}
+  }
+  el.setAttribute("aria-invalid",msg?"true":"false");
+  const lab=el.closest("label");let box=lab?lab.querySelector(".verr"):el.parentElement.querySelector(".verr");
+  if(!box){box=document.createElement("span");box.className="verr";box.setAttribute("role","alert");box.hidden=true;el.insertAdjacentElement("afterend",box);}
+  box.textContent=msg;box.hidden=!msg;
+  return !msg;
+}
+document.addEventListener("input",e=>{const el=e.target;if(el.dataset&&el.dataset.rule&&el.getAttribute("aria-invalid")==="true")validateEl(el);},true);
+document.addEventListener("focusout",e=>{const el=e.target;if(el.dataset&&el.dataset.rule)validateEl(el);},true);
 function applyPath(){
   const f=$("card-form");if(!f)return;const pv=f.querySelector('[data-k="a_path"]');if(!pv)return;
   const want=pv.value==="I have customers"?"1":(pv.value?"2":"");
@@ -970,19 +1024,20 @@ function gtmSheet(p,members,ro,draft){
   const sec=(h,s,body)=>`<details class="block sec" data-sec="${esc(h)}"${(secState[h]===undefined?!/^Worksheet A/.test(h):secState[h])?" open":""} style="margin-bottom:16px"><summary><h3>${h}</h3><span class="status cnt"></span></summary>${s?`<p class="sub">${s}</p>`:""}${body}</details>`;
   const aCard=CARD.gtm.filter(c=>(p.card||{})[c[0]]).map(c=>`<div><div class="status">${esc(c[1])}</div><div>${esc(p.card[c[0]])}</div></div>`).join("")||'<div class="status">No worksheet A yet.</div>';
   const T=gT(p),ac=p.card||{};
-  const cin=(k,l,w)=>`<input type="text" data-f="${k}" aria-label="${l}" style="min-width:${w||120}px">`;
+  const cin=(k,l,w)=>`<input type="text" maxlength="200" autocomplete="off" data-f="${k}" aria-label="${l}" style="min-width:${w||120}px">`;
+  const cn=(k,l,w,r)=>`<input type="number" data-rule="${r}" ${NUMR[r]} enterkeyhint="next" data-f="${k}" aria-label="${l}" style="min-width:${w||70}px">`;
   const csel=(k,l,o)=>`<select data-f="${k}" aria-label="${l}"><option value=""></option>${o.map(x=>`<option>${x}</option>`).join("")}</select>`;
   const tbl=(th,rows)=>`<div class="tablebox"><table><thead><tr>${th.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   const aSrc=(ac.a_last10||"").trim()?`<div class="notice">Your sources, from worksheet A: ${esc(String(ac.a_last10).trim().split(/\n+/).join(" · "))}</div>`:"";
   const b3=T
-    ?tbl(["Channel","Share of my customers (%)","Cost per customer (₹)","Could it take 5x more?","My call"],[1,2,3,4,5].map(i=>`<tr><td>${cin("ch"+i+"_n","Channel "+i,150)}</td><td class="n">${cin("ch"+i+"_1","Share "+i,60)}</td><td class="n">${cin("ch"+i+"_2","Cost "+i,80)}</td><td>${csel("ch"+i+"_3","5x "+i,["Yes","Not sure","No"])}</td><td>${csel("ch"+i+"_4","Call "+i,["Double down","Fix it","Test it","Stop"])}</td></tr>`).join(""))
+    ?tbl(["Channel","Share of my customers (%)","Cost per customer (₹)","Could it take 5x more?","My call"],[1,2,3,4,5].map(i=>`<tr><td>${cin("ch"+i+"_n","Channel "+i,150)}</td><td class="n">${cn("ch"+i+"_1","Share "+i,70,"pct")}</td><td class="n">${cn("ch"+i+"_2","Cost "+i,90,"money")}</td><td>${csel("ch"+i+"_3","5x "+i,["Yes","Not sure","No"])}</td><td>${csel("ch"+i+"_4","Call "+i,["Double down","Fix it","Test it","Stop"])}</td></tr>`).join(""))
     :tbl(["Channel","Where exactly?<small> Name the group, street, list or event</small>","Can I reach 20 of them there this week?","What I will do there","Cost to try<small> ₹ and hours</small>"],[1,2,3].map(i=>`<tr><td>${cin("ch"+i+"_n","Channel "+i,140)}</td><td>${cin("ch"+i+"_1","Where "+i,170)}</td><td>${csel("ch"+i+"_2","Reach 20 "+i,["Yes","Not sure","No"])}</td><td>${cin("ch"+i+"_3","Action "+i,170)}</td><td>${cin("ch"+i+"_4","Cost "+i,90)}</td></tr>`).join(""));
   const b4=T
-    ?tbl(["Last month","How many"],[["People who enquired or showed interest","tf1"],["Talked to me, or tried it","tf2"],["Paid","tf3"],["Customers I won 3 months ago","tf4"],["Of those, still paying or buying again","tf5"]].map(r=>`<tr><td>${r[0]}</td><td class="n">${cin(r[1],r[0],70)}</td></tr>`).join(""))+`<div class="status" id="b4-calc"></div>`+F("b_leak","Why I think people drop at the biggest leak")+F("b_motion","Who makes the sale, and how?","sel",["I sell it myself, in person or on a call","It sells itself: they sign up online","A partner introduces and sells it","A sales team sells it"])
-    :tbl(["What has happened so far","How many people"],[["People I have spoken to about the problem","ev1"],["Told me the problem is real, in their own words","ev2"],["Said they would pay, or asked when they can have it","ev3"],["Committed: paid, pre-ordered, signed or booked a pilot","ev4"]].map(r=>`<tr><td>${r[0]}</td><td class="n">${cin(r[1],r[0],70)}</td></tr>`).join(""))+`<div class="status" id="b4-calc"></div>`+F("f_drop","Where did most people stop?","sel",["Most did not see the problem as real","They saw the problem but would not pay","They would pay but did not commit","I have not spoken to enough people yet"])+F("b_ask","What will I ask them to do?","ta","The exact thing, with a number: pay ₹1,500 for a 3-month pilot, pre-order, book a demo slot. Not \"give feedback\".");
+    ?tbl(["Last month","How many"],[["People who enquired or showed interest","tf1"],["Talked to me, or tried it","tf2"],["Paid","tf3"],["Customers I won 3 months ago","tf4"],["Of those, still paying or buying again","tf5"]].map(r=>`<tr><td>${r[0]}</td><td class="n">${cn(r[1],r[0],80,"int")}</td></tr>`).join(""))+`<div class="status" id="b4-calc"></div>`+F("b_leak","Why I think people drop at the biggest leak")+F("b_motion","Who makes the sale, and how?","sel",["I sell it myself, in person or on a call","It sells itself: they sign up online","A partner introduces and sells it","A sales team sells it"])
+    :tbl(["What has happened so far","How many people"],[["People I have spoken to about the problem","ev1"],["Told me the problem is real, in their own words","ev2"],["Said they would pay, or asked when they can have it","ev3"],["Committed: paid, pre-ordered, signed or booked a pilot","ev4"]].map(r=>`<tr><td>${r[0]}</td><td class="n">${cn(r[1],r[0],80,"int")}</td></tr>`).join(""))+`<div class="status" id="b4-calc"></div>`+F("f_drop","Where did most people stop?","sel",["Most did not see the problem as real","They saw the problem but would not pay","They would pay but did not commit","I have not spoken to enough people yet"])+F("b_ask","What will I ask them to do?","ta","The exact thing, with a number: pay ₹1,500 for a 3-month pilot, pre-order, book a demo slot. Not \"give feedback\".");
   const b5=T
-    ?`<div class="row">${F("m_target","How many new customers I want (a number)","in")}${F("m_weeks","In how many weeks","in")}${F("m_conv","Enquiry to paid, in % (pre-filled from A)","in")}${F("m_cac","Cost to win one customer, ₹ (pre-filled from A)","in")}</div><div class="status" id="m-calc">Enter a conversion rate to see the math.</div>`
-    :`<div class="row">${F("m_cap","Conversations or asks I can realistically do per week","in")}${F("m_bar","Commitments that would make me keep going (a number)","in")}</div><div class="status" id="m-calc">Enter both numbers to see the math.</div>`;
+    ?`<div class="row">${F("m_target","How many new customers I want (a number)","num","int")}${F("m_weeks","In how many weeks","num","pos")}${F("m_conv","Enquiry to paid, in % (pre-filled from A)","num","pct")}${F("m_cac","Cost to win one customer, ₹ (pre-filled from A)","num","money")}</div><div class="status" id="m-calc">Enter a conversion rate to see the math.</div>`
+    :`<div class="row">${F("m_cap","Conversations or asks I can realistically do per week","num","int")}${F("m_bar","Commitments that would make me keep going (a number)","num","int")}</div><div class="status" id="m-calc">Enter both numbers to see the math.</div>`;
   const peers=members.filter(m=>m.id!==p.founderId);
   return `${ro?"":`<div class="actions" style="margin-bottom:12px"><button class="ghost" data-back="1">Back</button><span class="status">${draft?"GTM · Worksheet B":"GTM · Group "+esc(p.n)}</span></div>`}
   <section class="block" style="margin-bottom:16px"><h2>${esc(p.name)}</h2><div class="status">${esc(p.startup||"")}</div>
@@ -998,7 +1053,7 @@ function gtmSheet(p,members,ro,draft){
   ${draft?"":sec("Worksheet C: my updated gtm v1","The plan you will run for the next 14 days.",
     `${ro?"":`<div class="actions"><button class="ghost" data-copyb="1">Copy segment, message and channel from B</button></div>`}
     <h3 style="font-size:15px">My gtm v1</h3>${F("v_seg","Segment, narrow enough to list 20 names")}${F("v_msg","Message: I help ___ get ___ without ___","in")}<div class="row">${F("v_primary","Primary channel","in")}${F("v_goal","Goal: customers (or paid pilots) by zebra tank","in")}</div>
-    <h3 style="font-size:15px">My 14-day experiment</h3>${F("e_what","What I will do, and how much (for example 50 dms or 20 calls)")}<div class="row">${F("e_start","Start date (within 1 week)","in")}${F("e_end","End date","in")}</div>${F("e_keep","I will keep going if…")}${F("e_change","I will change course if…")}${F("e_ask","One ask of the cohort: an intro, a skill, a feedback round")}`)}
+    <h3 style="font-size:15px">My 14-day experiment</h3>${F("e_what","What I will do, and how much (for example 50 dms or 20 calls)")}<div class="row">${F("e_start","Start date (within 1 week)","date","start")}${F("e_end","End date","date","end")}</div>${F("e_keep","I will keep going if…")}${F("e_change","I will change course if…")}${F("e_ask","One ask of the cohort: an intro, a skill, a feedback round")}`)}
   ${ro?"":draft?`<div class="actions"><span class="status" id="sheet-status" role="status">Changes save when you leave a field. Worksheet C opens in your hot seat.</span></div>`:`<div class="actions"><button class="primary" data-done="1">Mark hot seat done</button><span class="status" id="sheet-status" role="status">Changes save when you leave a field and show to your group live.</span></div>`}`;
 }
 /* organizer: GTM before / after report */
