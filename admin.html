@@ -26,7 +26,7 @@ details.sec>.sub{margin-top:10px;font-size:14px}
 /* Layout: single centered column for founders; wide table view for organizers. Palette: sea teal + laterite clay on cool sand. */
 :root{
   --bg:#F2F4F1; --surface:#FFFFFF; --fg:#16231F; --muted:#5B6B65; --line:#D8DED9; --err:#B3261E;
-  --accent:#0E6560; --accent-fg:#FFFFFF; --clay:#B8512B; --ok:#1F7A4D; --warn:#A96A00; --soft:#E3EEEB;
+  --accent:#0E6560; --accent-fg:#FFFFFF; --clay:#B04A26; --ok:#1F7A4D; --warn:#A96A00; --soft:#E3EEEB;
   --font-display:"Bricolage Grotesque","Inter",system-ui,sans-serif; --font-body:"Inter",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -505,7 +505,7 @@ function renderMyGroups(){
       let btn="";
       if(p)btn=`<button class="${mine&&p.status!=="done"?"primary":"ghost"}" data-gopen="${esc(id)}">${mine?(p.status==="done"?"View my worksheet":"Continue my hot seat"):"Open worksheet"}</button>`;
       else if(mine)btn=(cards[s]&&cards[s][CARD[s][0][0]])?`<button class="primary" data-gstart="${s}">Start my hot seat</button>`:'<button class="ghost" data-gwork="1">Fill Worksheet A first</button>';
-      return `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b>${esc(m.name)}</b>${mine?' <span class="tag">you</span>':""}<div class="status">${esc(m.startup)} · ${esc(m.program)}${(m.offer||[]).length?" · strong at "+esc(m.offer.join(", ")):""} · ${st}</div></div>${btn}</div>`;}).join("");
+      return `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b>${esc(m.name)}</b>${mine?' <span class="tag">you</span>':""}<div class="status">${[m.startup,m.program,(m.offer||[]).length?"strong at "+m.offer.join(", "):"",st].filter(Boolean).map(esc).join(" · ")}</div></div>${btn}</div>`;}).join("");
     return `<section class="block" style="margin-bottom:16px"><h2>${SES[s]} session · Group ${esc(g.n)}</h2>${rows}</section>`;}).join("");
   box.innerHTML=out||'<div class="notice">Groups are not published yet. They will show here once the facilitators share them.</div>';
 }
@@ -823,7 +823,7 @@ function renderSeats(){
       let btn="";
       if(p)btn=`<button class="ghost" data-open="${esc(id)}">Open worksheet</button>`;
       else if(mine)btn=(cards[s]&&cards[s][CARD[s][0][0]])?`<button class="primary" data-start="${s}">Start my hot seat</button>`:'<span class="status">Save your card first</span>';
-      return `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b>${esc(m.name)}</b>${mine?' <span class="tag">you</span>':""}<div class="status">${esc(m.startup)} · ${p?(p.status==="done"?"Done":"Live now"):"Not started"}</div></div>${btn}</div>`;}).join("");
+      return `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b>${esc(m.name)}</b>${mine?' <span class="tag">you</span>':""}<div class="status">${[m.startup,p?(p.status==="done"?"Done":"Live now"):"Not started"].filter(Boolean).map(esc).join(" · ")}</div></div>${btn}</div>`;}).join("");
     return `<h2>${SES[s]} hot seats · Group ${esc(g.n)}</h2>${rows}`;}).join("");
   el.innerHTML=out;
 }
