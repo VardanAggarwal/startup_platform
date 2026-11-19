@@ -341,11 +341,13 @@ function ratingSel(id,key,val){
 }
 function renderOrg(){
   if(document.activeElement&&document.activeElement.tagName==="TEXTAREA")return;
-  const f=$("fprog").value,rows=all.filter(d=>!f||d.program===f);
-  const rr=roster.filter(x=>!f||x.program===f),pend=rr.filter(x=>!all.some(r=>r.rosterId===x.id));
-  $("pending").textContent=pend.length?"Not yet submitted: "+pend.map(x=>x.name).join(", "):(rr.length?"Everyone has submitted.":"");
+  const aOf=id=>{const c=exitsAll.find(d=>d.id===id);return c&&c.gtm&&c.gtm.a_path?c.gtm:null;};
+  const f=$("fprog").value,rows=all.filter(d=>(!f||d.program===f)&&aOf(d.rosterId||d.id));
+  const rr=roster.filter(x=>!f||x.program===f),pend=rr.filter(x=>!aOf(x.id));
+  $("pending").textContent=pend.length?"Worksheet A not saved yet: "+pend.map(x=>x.name).join(", "):(rr.length?"Everyone has saved Worksheet A.":"");
   const avg=k=>{const v=rows.map(r=>r[k]).filter(Boolean);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):"–";};
-  $("stats").innerHTML=`<div class="stat"><b>${rows.length}</b><span>submitted of ${rr.length}</span></div><div class="stat"><b>${avg("gtm")}</b><span>avg GTM (self)</span></div>`;
+  const hasC=rows.filter(r=>aOf(r.rosterId||r.id).a_path==="I have customers").length;
+  $("stats").innerHTML=`<div class="stat"><b>${rows.length}</b><span>Worksheet A saved, of ${rr.length}</span></div><div class="stat"><b>${hasC}</b><span>have customers</span></div><div class="stat"><b>${rows.length-hasC}</b><span>no customers yet</span></div>`;
   const w={},o={};rows.forEach(r=>{(r.learn||[]).forEach(s=>w[s]=(w[s]||0)+1);(r.offer||[]).forEach(s=>o[s]=(o[s]||0)+1);});
   const mx=Math.max(1,...Object.values(w),...Object.values(o));
   $("bars-skill").innerHTML=SKILLS.filter(s=>w[s]||o[s]).map(s=>{const a=o[s]||0,b=w[s]||0;
@@ -353,14 +355,14 @@ function renderOrg(){
     <div style="display:grid;gap:3px;margin-top:3px"><div class="bar"><i style="width:${Math.max(3,a/mx*100)}%"></i></div><div class="bar"><i class="w" style="width:${Math.max(3,b/mx*100)}%"></i></div></div></div>`;}).join("")||'<span class="status">No data yet.</span>';
   $("rows").innerHTML=rows.length?rows.map(r=>{const rt=ratings[r.id]||{};
     return `<tr><td><details><summary>${esc(r.name)}</summary><div class="status" style="max-width:260px">${esc(r.program)} · ${esc(r.stage)}<br>Hrs/mo: ${esc(r.hours)}</div></details></td>
-    <td>${esc(r.startup)}<div class="status">${esc(r.oneliner)}</div></td>
-    <td><div style="max-width:300px">${esc(r.chtext)}</div></td>
+    <td>${esc((aOf(r.rosterId||r.id)||{}).a_startup||r.startup)}<div class="status">${esc((aOf(r.rosterId||r.id)||{}).a_sell||r.oneliner)}</div></td>
+    <td><div style="max-width:300px">${esc((aOf(r.rosterId||r.id)||{}).a_headache||r.chtext)}</div></td>
     <td>${(r.learn||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join("")}<div class="status" style="max-width:220px">${esc(r.learntext)}</div></td>
     <td>${(r.offer||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join("")}<div class="status" style="max-width:220px">${esc(r.offertext)}</div></td>
     <td class="n">${esc(r.gtm)}</td><td class="n">${ratingSel(r.id,"gtm",rt.gtm)}</td>
     
     <td><textarea data-id="${esc(r.id)}" data-key="notes" rows="3" aria-label="Notes on ${esc(r.name)}" placeholder="Add notes">${esc(rt.notes)}</textarea></td></tr>`;}).join("")
-    :'<tr><td colspan="8" class="status">No manifests yet.</td></tr>';
+    :'<tr><td colspan="8" class="status">No Worksheet A saved yet.</td></tr>';
 }
 $("fprog").addEventListener("change",renderOrg);
 $("rows").addEventListener("change",async e=>{
@@ -1314,7 +1316,7 @@ async function initOrg(user){
   db.collection("groups").onSnapshot(s=>{rawSaved={};s.docs.forEach(d=>{rawSaved[d.id]=d.data();});mergeGroups();},()=>{});
   db.collection("groupsPublished").onSnapshot(s=>{rawPub={};s.docs.forEach(d=>{const x=d.data(),gs=x.groups||[];rawPub[d.id]={session:d.id,size:gs[0]?(gs[0].members||[]).length:5,groups:gs.map(g=>({n:g.n,members:(g.members||[]).map(m=>typeof m==="string"?m:m.id)})),published:true};});mergeGroups();},()=>{});
   orgReady=true;subRounds();subPlans();renderRounds();
-  db.collection("cards").onSnapshot(s=>{exitsAll=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderExits();renderRun();},()=>{});
+  db.collection("cards").onSnapshot(s=>{exitsAll=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderOrg();renderExits();renderRun();},()=>{});
   db.collection("groupFacilitators").onSnapshot(s=>{gfac={};s.docs.forEach(d=>{if(d.id==="gtm")gfac=d.data();});renderGS();},()=>{});
   db.collection("planChecks").onSnapshot(s=>{planChecks={};s.docs.forEach(d=>{planChecks[d.id]=d.data();});renderPlans();},()=>{});
 }
