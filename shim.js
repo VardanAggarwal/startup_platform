@@ -54,8 +54,9 @@
   const cput = (k, v) => { try { localStorage.setItem(ckey(k), JSON.stringify(v)); } catch (e) {} };
   const clearCache = () => { try { Object.keys(localStorage).filter((k) => k.indexOf("wsc:") === 0).forEach((k) => localStorage.removeItem(k)); } catch (e) {} };
   const ticks = new Set();
-  let lastAll = 0;
-  const refreshAll = (force) => { const n = Date.now(); if (!force && n - lastAll < 3000) return; lastAll = n; ticks.forEach((t) => t.run()); };
+  // Tab focus / page change only refetch what has not been fetched in the last 20 s (the Refresh button always refetches everything).
+  const COOL = 20000;
+  const refreshAll = (force) => { const n = Date.now(); ticks.forEach((t) => { if (force || n - (t.at || 0) >= COOL) t.run(); }); };
   if (CFG) { document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshAll(); }); window.addEventListener("focus", () => refreshAll()); window.addEventListener("hashchange", () => refreshAll()); }
   // Own save or a Realtime ping for one document: lists fetch just that document, single-document watchers re-read themselves.
   const bump = (coll, id) => ticks.forEach((t) => { if (t.coll === coll) (t.ev && id !== undefined ? t.ev(id) : t.run()); });
@@ -63,7 +64,7 @@
     let last = null, dead = false;
     if (key) { const c = cget(key); if (c !== null) { last = JSON.stringify(c); cb(c); } }
     const apply = (v) => { const j = JSON.stringify(v); if (key) cput(key, v); if (j !== last) { last = j; if (!dead) cb(v); } };
-    const tick = async () => { try { apply(await get()); } catch (e) { if (last !== "err") { last = "err"; errCb && errCb(e); } } };
+    const tick = async () => { reg.at = Date.now(); try { apply(await get()); } catch (e) { if (last !== "err") { last = "err"; errCb && errCb(e); } } };
     const reg = { coll: key ? key.slice(2).split("/")[0] : null, run: tick, ev: ev ? async (id) => { try { const v = await ev(id); if (v) apply(v); else await tick(); } catch (e) {} } : null }; ticks.add(reg);
     tick(); const t = setInterval(() => { if (!(CFG && document.hidden)) tick(); }, POLL); return () => { dead = true; clearInterval(t); ticks.delete(reg); };
   };
@@ -73,12 +74,11 @@
     if (!p || !p.c) return; const k = p.c + "/" + p.id; clearTimeout(pend[k]);
     pend[k] = setTimeout(() => { delete pend[k]; bump(p.c, p.id); }, 300 + Math.random() * 900); // coalesce rapid saves, spread 50 pages apart
   }
-  let seenSub = false;
   function startRealtime() {
     const go = () => {
       try {
         const rt = window.supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: false, autoRefreshToken: false }, realtime: { params: { eventsPerSecond: 10 } } });
-        rt.channel("workshop").on("broadcast", { event: "changed" }, (m) => onPing(m.payload)).subscribe((st) => { if (st === "SUBSCRIBED") { if (seenSub) setTimeout(() => refreshAll(true), Math.random() * 4000); seenSub = true; } });
+        rt.channel("workshop").on("broadcast", { event: "changed" }, (m) => onPing(m.payload)).subscribe(); // a Wi-Fi blink does not refetch anything; the 60 s check, tab focus (after 20 s) or the Refresh button catch up
       } catch (e) {}
     };
     if (window.supabase) return go();
