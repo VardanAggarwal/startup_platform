@@ -1,0 +1,1339 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>
+details.block.sec{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:12px;display:block}
+details.sec[open]{padding-bottom:20px}
+details.sec>:not(summary){margin-top:16px}
+details.sec>.sub{margin-top:10px;font-size:14px}
+.sec>summary h3{font-size:18px;line-height:1.25;color:var(--accent)}
+.sec>summary .cnt{font-size:13px;font-weight:600;color:var(--muted);background:var(--soft);border-radius:999px;padding:2px 10px}
+.sec>summary:hover h3{text-decoration:underline}
+.sec label.f{font-size:14px;font-weight:600;color:var(--fg);gap:8px;margin-top:4px}
+.sec label.f textarea,.sec label.f input,.sec label.f select{font-size:15px;font-weight:400;line-height:1.45;background:var(--surface);border-color:var(--line)}
+.sec label.f textarea:disabled,.sec label.f input:disabled,.sec label.f select:disabled{background:var(--bg);color:var(--fg);opacity:1;-webkit-text-fill-color:var(--fg)}
+.sec .hint,.sec .sub small,.sec th small{color:var(--muted);font-weight:400}
+.sec .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.sec .row>label.f{margin-top:0}
+.sec .tablebox th{font-size:13px;font-weight:600;color:var(--muted);text-align:left;white-space:normal}
+.sec .tablebox td{vertical-align:top}.sec .tablebox td select{min-width:128px}.sec .tablebox td input{min-width:80px}
+.sec h3[style]{font-size:15px;color:var(--fg);margin-top:8px}
+.sec .notice,.sec .status{font-size:14px}
+.sec>div>.status:first-child{font-weight:500}
+.sec>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:32px}.sec>summary::-webkit-details-marker{display:none}.sec>summary h3{margin:0}.sec>summary::after{content:"\25BE";margin-left:auto;opacity:.6}.sec:not([open])>summary::after{content:"\25B8"}.sec>summary .cnt{white-space:nowrap}
+:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Build3 GTM workshop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: single centered column for founders; wide table view for organizers. Palette: sea teal + laterite clay on cool sand. */
+:root{
+  --bg:#F2F4F1; --surface:#FFFFFF; --fg:#16231F; --muted:#5B6B65; --line:#D8DED9;
+  --accent:#0E6560; --accent-fg:#FFFFFF; --clay:#B8512B; --ok:#1F7A4D; --warn:#A96A00; --soft:#E3EEEB;
+  --font-display:"Bricolage Grotesque","Inter",system-ui,sans-serif; --font-body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1A18; --surface:#16251F; --fg:#E6EEEA; --muted:#93A59E; --line:#28403A;
+  --accent:#4FB5AC; --accent-fg:#06201D; --clay:#E58A62; --ok:#5FCB92; --warn:#E0A545; --soft:#1B332E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1A18; --surface:#16251F; --fg:#E6EEEA; --muted:#93A59E; --line:#28403A;
+  --accent:#4FB5AC; --accent-fg:#06201D; --clay:#E58A62; --ok:#5FCB92; --warn:#E0A545; --soft:#1B332E; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-block:24px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:720px;margin:0 auto}.wrap.wide{max-width:1180px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:30px;line-height:1.15}h2{font-size:20px}h3{font-size:16px}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--clay);font-weight:600}
+.sub{color:var(--muted);margin:8px 0 0;max-width:62ch}
+header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-end;margin-bottom:20px}
+.tabs{display:flex;gap:4px;background:var(--soft);padding:4px;border-radius:8px}
+.tabs button{border:0;background:transparent;color:var(--fg);padding:7px 14px;border-radius:6px;font:inherit;font-weight:500;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+section.block{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px;display:flex;flex-direction:column;gap:16px}
+.block>h2+.sub{margin-top:-8px}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:500;min-width:0}
+.hint{font-weight:400;color:var(--muted);font-size:13px}
+input[type=text],input[type=number],select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%;min-width:0}
+textarea{min-height:92px;resize:vertical}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.chip span{display:inline-block;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:14px;font-weight:400}
+.chip input:checked+span{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.chip input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.chip input:disabled+span{opacity:.45}
+.scale{display:flex;flex-direction:column;gap:6px}
+.scale label{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);font-weight:400;cursor:pointer}
+.scale label:has(input:checked){border-color:var(--accent);background:var(--soft)}
+.scale b{min-width:1ch}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+button.primary{background:var(--accent);color:var(--accent-fg);border:0;border-radius:6px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--line);border-radius:6px;padding:8px 14px;font:inherit;font-weight:500;cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+.status{font-size:14px;color:var(--muted)}.status.ok{color:var(--ok)}.status.err{color:var(--clay)}
+.notice{border:1px dashed var(--line);border-radius:10px;padding:20px;color:var(--muted)}
+.stats{display:flex;flex-wrap:wrap;gap:24px}
+.stat b{display:block;font-family:var(--font-display);font-size:28px;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);white-space:nowrap;position:sticky;top:0;background:var(--surface)}
+td.n{font-variant-numeric:tabular-nums;text-align:center}
+td select{padding:4px 6px;width:64px}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--soft);font-size:12px;margin:0 4px 4px 0;white-space:nowrap}
+.gap{color:var(--clay);font-weight:600}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:minmax(120px,190px) 1fr auto;gap:10px;align-items:center;font-size:13.5px}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--accent)}
+.bar i.w{background:var(--clay)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.legend{font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.legend em{font-style:normal;display:inline-flex;align-items:center;gap:6px}
+.legend em::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--accent)}
+.legend em.w::before{background:var(--clay)}
+details summary{cursor:pointer;color:var(--accent);font-weight:500}
+.stats{display:flex;flex-wrap:wrap;gap:24px}
+.stat b{display:block;font-family:var(--font-display);font-size:28px;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--line);border-radius:6px;padding:8px 14px;font:inherit;font-weight:500;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.status{font-size:14px;color:var(--muted)}.status.ok{color:var(--ok)}.status.err{color:var(--clay)}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);white-space:nowrap;background:var(--surface)}
+td.n{font-variant-numeric:tabular-nums;text-align:center}
+td select{padding:4px 6px;width:64px}
+td textarea{font:inherit;font-size:13px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:220px;min-height:64px;resize:vertical}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--soft);font-size:12px;margin:0 4px 4px 0;white-space:nowrap}
+.gap{color:var(--clay);font-weight:600}
+.legend{font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.legend em{font-style:normal;display:inline-flex;align-items:center;gap:6px}
+.legend em::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--accent)}
+.legend em.w::before{background:var(--clay)}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--accent)}
+.bar i.w{background:var(--clay)}
+details summary{cursor:pointer;color:var(--accent);font-weight:500}
+
+#org{max-width:1180px;margin:0 auto}
+.gcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.gcards .block{gap:10px}
+.tabs button{white-space:nowrap}
+#org .sub{margin:8px 0 0}
+th small{display:block;text-transform:none;letter-spacing:0;white-space:normal;font-weight:400;font-size:12px;min-width:110px}
+</style>
+
+<div class="wrap" id="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Susegad Camp · build3 bfb &amp; bia</div>
+      <h1>GTM workshop</h1>
+      <p class="sub">Five minutes. What you're stuck on, what you want to learn and what you can give back. We use this to match you with peers and mentors over the next three weeks.</p>
+    </div>
+    <div class="tabs" id="fnav" hidden><button data-h="work" aria-selected="true">Worksheets</button><button data-h="rate" aria-selected="false">Rate pitches</button><button data-h="groups" aria-selected="false">My groups</button><button data-h="scores" aria-selected="false">My scores</button></div>
+  </header>
+
+  <div id="view-mine">
+    <div id="signin" class="notice" hidden>Sign in to claude.ai to fill your manifest. Your answers are saved to your account and you can edit them until the camp starts.</div>
+    <form id="form" hidden autocomplete="off">
+      <section class="block">
+        <h2>About you</h2>
+        <div class="row">
+          <label class="f" for="who">Your name<select id="who" required><option value="">Loading…</option></select><span class="hint" id="whoinfo"></span></label>
+          <label class="f" for="startup">Startup<input type="text" id="startup" required></label>
+        </div>
+        <div class="row">
+          <label class="f" for="stage">Stage
+            <select id="stage" required><option value="">Select</option><option>Idea / pre-revenue</option><option>Early revenue (under ₹10L ARR)</option><option>Growing (₹10L–₹1Cr ARR)</option><option>Scaling (₹1Cr+ ARR)</option></select></label>
+        </div>
+        <label class="f" for="oneliner">What the startup does in one line<input type="text" id="oneliner" maxlength="140" required></label>
+      </section>
+
+      <section class="block">
+        <h2>Your key challenge</h2>
+        <p class="sub">Leave fundraising out. What else is holding the business back right now?</p>
+        <label class="f" for="chtext">What is the biggest challenge in your business right now?<span class="hint">What have you tried? What would "solved" look like in 3 months?</span><textarea id="chtext" required></textarea></label>
+      </section>
+
+      <section class="block">
+        <h2>Skills you want to build</h2>
+        <div class="f"><span style="font-weight:500">Pick up to 3</span>
+          <div class="chips" id="learn" data-name="learn" data-max="3"></div></div>
+        <label class="f" for="learntext">Anything specific? <span class="hint">(optional)</span><input type="text" id="learntext"></label>
+      </section>
+
+      <section class="block">
+        <h2>What you can offer peers</h2>
+        <div class="f"><span style="font-weight:500">You're strong at <span class="hint">(pick up to 3)</span></span>
+          <div class="chips" id="offer" data-name="offer" data-max="3"></div></div>
+        <label class="f" for="offertext">Example of something you've done well<input type="text" id="offertext" required></label>
+        <label class="f" for="hours">Hours per month you can give to other founders
+          <select id="hours"><option value="1">1–2</option><option value="3" selected>3–4</option><option value="6">5–8</option><option value="10">9+</option></select></label>
+      </section>
+
+      <section class="block">
+        <h2>Where you stand today</h2>
+        <p class="sub">Choose the statement that matches what is true now.</p>
+        <div class="f"><span style="font-weight:500">Go-to-market</span><div class="scale" id="gtm"></div></div>
+      </section>
+
+      <div class="actions">
+        <button class="primary" type="submit" id="save">Submit manifest</button>
+        <span class="status" id="status" role="status"></span>
+      </div>
+    </form>
+  </div>
+
+  <div id="view-rate" hidden><div id="rate-body"></div><div id="rate-results"></div></div>
+  <div id="view-groups" hidden><div id="groups-body"></div></div>
+  <div id="view-work" hidden><div id="work-body"></div></div>
+  <div id="view-scores" hidden><div id="scores-body"></div></div>
+</div>
+
+<div id="org" hidden>
+  <div style="margin-bottom:20px">
+    <div class="eyebrow">Susegad Camp · build3 bfb &amp; bia</div>
+    <h1>Manifest Organizers</h1>
+    <p class="sub">All founder submissions, skill gaps and facilitator ratings. Visible to build3 organizers only.</p>
+  </div>
+  <div id="gate" class="notice">Checking access…</div>
+  <div id="console" hidden>
+    <div id="stage-bar" class="notice" style="margin-bottom:12px"></div>
+    <div class="tabs" id="otabs" style="margin-bottom:16px;width:fit-content"><button data-p="sub" aria-selected="true">Submissions</button><button data-p="run" aria-selected="false">Run sheet</button><button data-p="rounds" aria-selected="false">Pitch rounds</button><button data-p="groups" aria-selected="false">Groups</button><button data-p="gs" aria-selected="false">Group status</button><button data-p="plans" aria-selected="false">Hot-seat plans</button><button data-p="frate" aria-selected="false">Rate pitches</button><button data-p="ba" aria-selected="false">GTM before / after</button><button data-p="sum" aria-selected="false">Room summary</button></div>
+    <div id="p-sub">
+    <section class="block" style="margin-bottom:16px">
+      <div class="stats" id="stats"></div>
+      <p class="status" id="pending" style="margin:0"></p>
+      <div class="actions">
+        <label class="status" for="fprog">Program
+          <select id="fprog" style="margin-left:6px"><option value="">All</option><option>BIA C11</option><option>BFB C6</option></select></label>
+        <button class="ghost" id="csv">Download CSV</button>
+        <span class="status" id="orgstatus" role="status"></span>
+      </div>
+    </section>
+    <section class="block" style="margin-bottom:16px">
+      <h3>Skills wanted vs offered</h3>
+      <div class="legend"><em>Offered</em><em class="w">Wanted</em></div>
+      <div id="bars-skill" style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))"></div>
+    </section>
+    <div class="tablebox"><table>
+      <thead><tr><th>Founder</th><th>Startup</th><th>Challenge</th><th>Wants</th><th>Offers</th><th>GTM self</th><th>GTM fac.</th><th>Organizer notes</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="8" class="status">Loading…</td></tr></tbody>
+    </table></div>
+    <p class="status" style="margin-top:10px">Click a name for program, stage and hours. Ratings save when you change them. Notes save when you click away from the box.</p>
+    </div>
+    <div id="p-run" hidden><div id="run-body"></div></div>
+    <div id="p-rounds" hidden>
+      <section class="block" style="margin-bottom:16px"><h3>Who is next</h3>
+        <div class="actions">
+          <input type="hidden" id="r-session" value="gtm">
+          <select id="r-phase" aria-label="Phase"><option value="before">Before</option><option value="room">Room after</option></select>
+          <select id="r-group" aria-label="Group"><option value="">All groups</option></select>
+          <label class="status"><input type="checkbox" id="r-hide"> Hide founders already done</label>
+          <button class="ghost" id="r-release-all">Release all scores (end of day)</button><span class="status" id="r-status" role="status"></span></div>
+        <p class="status" style="margin:0 0 8px">Pick the founder who is going next and press Open. Groups do not exist yet for the Before phase: they are built after these pitches are scored. Founders see a rating card while a round is open. Close it to count the ratings.</p>
+        <div class="tablebox"><table><thead><tr><th>Founder</th><th id="next-gth">Group</th><th>Status in this phase</th><th>Rated</th><th></th></tr></thead><tbody id="next-list"></tbody></table></div></section>
+      <h3 style="margin:0 0 8px">All rounds</h3>
+      <div class="tablebox"><table><thead><tr><th>Founder</th><th>Session</th><th>Status</th><th>Peers</th><th>Peer avg</th><th>Facilitators</th><th>Fac. avg</th><th></th></tr></thead><tbody id="rounds-list"></tbody></table></div>
+    </div>
+    <div id="p-frate" hidden><section class="block" style="margin-bottom:16px"><h3>Rate pitches as a facilitator</h3><p class="status" style="margin:0">Open pitches appear here. Your ratings count separately from the founders' ratings.</p></section></div>
+    <div id="p-gs" hidden><div id="gs-body"></div></div>
+    <div id="p-groups" hidden>
+      <section class="block" style="margin-bottom:16px"><h3>Build groups</h3>
+        <div class="actions">
+          <input type="hidden" id="g-session" value="gtm">
+          <label class="status" for="g-size">Group size <input type="number" id="g-size" min="3" max="10" value="5" style="width:64px;display:inline-block"></label>
+          <button class="ghost" id="g-gen">Generate groups</button><button class="ghost" id="g-shuffle">Shuffle</button>
+          <button class="ghost" id="g-save">Save</button><button class="ghost" id="g-publish">Publish to founders</button><button class="ghost" id="g-csv">Download CSV</button>
+          <span class="status" id="g-status" role="status"></span></div>
+        <p class="status" id="g-note" style="margin:0"></p></section>
+      <div id="g-out"></div>
+    </div>
+    <div id="p-sum" hidden><div id="sum-body"></div></div>
+    <div id="p-ba" hidden>
+      <section class="block" style="margin-bottom:16px"><h3>GTM before / after</h3><p class="status" id="ba-note" style="margin:0"></p></section>
+      <div class="tablebox" style="margin-bottom:16px"><table><thead><tr><th>Criterion</th><th>Before</th><th>After (room)</th><th>Change</th></tr></thead><tbody id="ba-crit"></tbody></table></div>
+      <section class="block" style="margin-bottom:16px" id="ba-top"></section>
+      <div class="tablebox"><table><thead><tr><th>Founder</th><th>Before</th><th>After (room)</th><th>Change</th></tr></thead><tbody id="ba-list"></tbody></table></div>
+    </div>
+    <div id="p-exit" hidden>
+      <section class="block" style="margin-bottom:16px"><div class="stats" id="exit-stats"></div>
+        <div class="actions"><label class="status" for="x-session">Session <select id="x-session"><option value="gtm">GTM</option></select></label><button class="ghost" id="x-csv">Download CSV</button><span class="status" id="x-status" role="status"></span></div>
+        <p class="status" id="x-pending" style="margin:0"></p></section>
+      <div class="tablebox"><table><thead><tr><th>Founder</th><th>90-day goal</th><th>Top 3 actions</th><th>Weekly number</th><th>Dropping</th><th>Risk</th><th>Help needed</th><th>Confidence</th><th>Feedback</th></tr></thead><tbody id="exit-list"></tbody></table></div>
+    </div>
+    <div id="p-plans" hidden>
+      <div class="actions" style="margin-bottom:12px"><button class="ghost" id="pl-csv">Download CSV</button><button class="ghost" id="pa-csv">Download worksheet A (GTM)</button><span class="status" id="pl-status" role="status"></span></div>
+      <div class="tablebox"><table><thead><tr><th>Founder</th><th>Session</th><th>Group</th><th>Status</th><th>Required fields filled</th><th>Goal and plan</th><th>Facilitator checks</th></tr></thead><tbody id="plans-list"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<script>window.WORKSHOP_MODE="founder";</script>
+<script src="config.js"></script>
+<script src="shim.js"></script>
+<script>
+const SKILLS=["GTM & sales","Marketing & brand","Product","Tech & AI","Hiring & team","Operations","Finance & unit economics","Legal & compliance","Partnerships & BD","Customer success","Data & analytics","Founder leadership & wellbeing"];
+const CHALLENGES=SKILLS.concat(["Other"]);
+const GTM=["No paying customers yet","A few early users, mostly from my network","One repeatable channel and 10+ paying customers","Several channels, tracked funnel and known CAC","Predictable growth engine with a sales process"];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let db=null,uid=null,all=[],ratings={},roster=[],rosterMap={};
+
+function chips(el,list){
+  const name=el.dataset.name,max=+el.dataset.max;
+  el.innerHTML=list.map(s=>`<label class="chip"><input type="checkbox" name="${name}" value="${esc(s)}"><span>${esc(s)}</span></label>`).join("");
+  el.addEventListener("change",()=>{
+    const boxes=[...el.querySelectorAll("input")],n=boxes.filter(b=>b.checked).length;
+    boxes.forEach(b=>{b.disabled=!b.checked&&n>=max;});
+    if(max===1&&n>1){}
+  });
+  if(max===1){el.addEventListener("change",e=>{
+    if(!e.target.checked)return;
+    el.querySelectorAll("input").forEach(b=>{if(b!==e.target)b.checked=false;b.disabled=false;});
+  });}
+}
+function scale(el,id,list){
+  el.innerHTML=list.map((t,i)=>`<label><input type="radio" name="${id}" value="${i+1}" required><span>${esc(t)}</span></label>`).join("");
+}
+const picked=el=>[...el.querySelectorAll("input:checked")].map(b=>b.value);
+function setPicked(el,vals){
+  const set=new Set(vals||[]);
+  el.querySelectorAll("input").forEach(b=>{b.checked=set.has(b.value);});
+  el.dispatchEvent(new Event("change"));
+}
+chips($("learn"),SKILLS);chips($("offer"),SKILLS);
+scale($("gtm"),"gtm",GTM);
+
+function fill(d){
+  ["startup","stage","oneliner","chtext","learntext","offertext","hours"].forEach(k=>{if(d[k]!=null)$(k).value=d[k];});
+  if(d.rosterId){$("who").value=d.rosterId;$("who").dispatchEvent(new Event("change"));}
+  setPicked($("learn"),d.learn);setPicked($("offer"),d.offer);
+  if(d.gtm)document.querySelector(`input[name=gtm][value="${d.gtm}"]`).checked=true;
+}
+function setStatus(el,msg,cls){el.textContent=msg;el.className="status"+(cls?" "+cls:"");}
+
+$("form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const st=$("status");
+  if(!picked($("learn")).length){setStatus(st,"Pick at least one skill you want to build.","err");return;}
+  if(!picked($("offer")).length){setStatus(st,"Pick at least one skill you can offer.","err");return;}
+  const data={
+    rosterId:$("who").value,name:rosterMap[$("who").value].name,program:rosterMap[$("who").value].program,
+    startup:$("startup").value.trim(),stage:$("stage").value,oneliner:$("oneliner").value.trim(),
+    chtext:$("chtext").value.trim(),
+    learn:picked($("learn")),learntext:$("learntext").value.trim(),
+    offer:picked($("offer")),offertext:$("offertext").value.trim(),hours:$("hours").value,
+    gtm:+document.querySelector("input[name=gtm]:checked").value,
+    updatedAt:new Date().toISOString()
+  };
+  $("save").disabled=true;setStatus(st,"Saving…");
+  try{await db.doc("manifest/"+uid).set(data);myManifest=data;setStatus(st,"Saved. You can come back and edit this any time before the camp.","ok");}
+  catch(err){setStatus(st,"Could not save: "+(err&&err.message||"try again")+".","err");}
+  $("save").disabled=false;
+});
+
+function ratingSel(id,key,val){
+  return `<select data-id="${esc(id)}" data-key="${key}" aria-label="Facilitator ${key}"><option value="">–</option>${[1,2,3,4,5].map(n=>`<option${val===n?" selected":""}>${n}</option>`).join("")}</select>`;
+}
+function renderOrg(){
+  if(document.activeElement&&document.activeElement.tagName==="TEXTAREA")return;
+  const f=$("fprog").value,rows=all.filter(d=>!f||d.program===f);
+  const rr=roster.filter(x=>!f||x.program===f),pend=rr.filter(x=>!all.some(r=>r.rosterId===x.id));
+  $("pending").textContent=pend.length?"Not yet submitted: "+pend.map(x=>x.name).join(", "):(rr.length?"Everyone has submitted.":"");
+  const avg=k=>{const v=rows.map(r=>r[k]).filter(Boolean);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):"–";};
+  $("stats").innerHTML=`<div class="stat"><b>${rows.length}</b><span>submitted of ${rr.length}</span></div><div class="stat"><b>${avg("gtm")}</b><span>avg GTM (self)</span></div>`;
+  const w={},o={};rows.forEach(r=>{(r.learn||[]).forEach(s=>w[s]=(w[s]||0)+1);(r.offer||[]).forEach(s=>o[s]=(o[s]||0)+1);});
+  const mx=Math.max(1,...Object.values(w),...Object.values(o));
+  $("bars-skill").innerHTML=SKILLS.filter(s=>w[s]||o[s]).map(s=>{const a=o[s]||0,b=w[s]||0;
+    return `<div><div style="display:flex;justify-content:space-between;font-size:13.5px"><span>${esc(s)}</span><span class="${b>a?"gap":""}">${a} offer · ${b} want</span></div>
+    <div style="display:grid;gap:3px;margin-top:3px"><div class="bar"><i style="width:${Math.max(3,a/mx*100)}%"></i></div><div class="bar"><i class="w" style="width:${Math.max(3,b/mx*100)}%"></i></div></div></div>`;}).join("")||'<span class="status">No data yet.</span>';
+  $("rows").innerHTML=rows.length?rows.map(r=>{const rt=ratings[r.id]||{};
+    return `<tr><td><details><summary>${esc(r.name)}</summary><div class="status" style="max-width:260px">${esc(r.program)} · ${esc(r.stage)}<br>Hrs/mo: ${esc(r.hours)}</div></details></td>
+    <td>${esc(r.startup)}<div class="status">${esc(r.oneliner)}</div></td>
+    <td><div style="max-width:300px">${esc(r.chtext)}</div></td>
+    <td>${(r.learn||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join("")}<div class="status" style="max-width:220px">${esc(r.learntext)}</div></td>
+    <td>${(r.offer||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join("")}<div class="status" style="max-width:220px">${esc(r.offertext)}</div></td>
+    <td class="n">${esc(r.gtm)}</td><td class="n">${ratingSel(r.id,"gtm",rt.gtm)}</td>
+    
+    <td><textarea data-id="${esc(r.id)}" data-key="notes" rows="3" aria-label="Notes on ${esc(r.name)}" placeholder="Add notes">${esc(rt.notes)}</textarea></td></tr>`;}).join("")
+    :'<tr><td colspan="8" class="status">No manifests yet.</td></tr>';
+}
+$("fprog").addEventListener("change",renderOrg);
+$("rows").addEventListener("change",async e=>{
+  const s=e.target.closest("select[data-id],textarea[data-id]");if(!s)return;
+  const id=s.dataset.id,key=s.dataset.key,val=key==="notes"?s.value.trim():(s.value?+s.value:null);
+  ratings[id]=Object.assign({},ratings[id],{[key]:val});
+  try{await db.doc("ratings/"+id).set(ratings[id]);setStatus($("orgstatus"),key==="notes"?"Notes saved.":"Rating saved.","ok");}
+  catch(err){setStatus($("orgstatus"),"Could not save.","err");}
+});
+$("csv").addEventListener("click",async()=>{
+  const dl=await claude.use("downloads");
+  if(!dl){setStatus($("orgstatus"),"Download is not available in this view.","err");return;}
+  const cols=["name","startup","program","stage","oneliner","chtext","learn","learntext","offer","offertext","hours","gtm"];
+  const q=v=>'"'+String(Array.isArray(v)?v.join("; "):(v==null?"":v)).replace(/"/g,'""')+'"';
+  const lines=[cols.concat(["gtm_facilitator","ai_facilitator","organizer_notes"]).join(",")].concat(all.map(r=>{const rt=ratings[r.id]||{};
+    return cols.map(c=>q(r[c])).concat([q(rt.gtm),q(rt.notes)]).join(",");}));
+  try{await dl.save({filename:"build3-manifest.csv",data:lines.join("\n")});}catch(err){setStatus($("orgstatus"),"Download cancelled.","err");}
+});
+/* Group builder: snake draft on score, then swap search for balance, program mix and skill coverage. */
+function rng(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const REL={gtm:["GTM & sales","Marketing & brand","Customer success","Partnerships & BD"]};
+function groupCost(groups,P,session,mu,share){
+  let c=0;const rel=new Set(REL[session]||[]);
+  for(const g of groups){
+    const m=g.map(id=>P[id]);if(!m.length)continue;
+    const mean=m.reduce((a,p)=>a+p.score,0)/m.length;
+    c+=(mean-mu)**2*12;
+    const sc=m.map(p=>p.score),span=Math.max(...sc)-Math.min(...sc);
+    if(span<2)c+=(2-span)*1.5;
+    const b=m.filter(p=>p.program==="BIA C11").length;c+=(b-m.length*share)**2*0.8;
+    m.forEach(p=>{(p.learn||[]).forEach(s=>{if(!m.some(o=>o!==p&&(o.offer||[]).includes(s)))c+=rel.has(s)?0.9:0.4;});});
+  }
+  return c;
+}
+function buildGroups(people,size,seed,session){
+  const n=people.length;if(!n)return [];
+  const k=Math.max(1,Math.ceil(n/Math.max(2,size))),R=rng(seed),P={};
+  people.forEach(p=>{P[p.id]=p;});
+  const order=people.map(p=>({p,j:R()})).sort((a,b)=>b.p.score-a.p.score||a.j-b.j).map(x=>x.p.id);
+  const groups=Array.from({length:k},()=>[]);
+  order.forEach((id,i)=>{const r=Math.floor(i/k),c=i%k;groups[r%2?k-1-c:c].push(id);});
+  const mu=people.reduce((a,p)=>a+p.score,0)/n,share=people.filter(p=>p.program==="BIA C11").length/n;
+  let cur=groupCost(groups,P,session,mu,share);
+  for(let it=0;it<9000&&k>1;it++){
+    const a=Math.floor(R()*k),b=Math.floor(R()*k);
+    if(a===b||!groups[a].length||!groups[b].length)continue;
+    const i=Math.floor(R()*groups[a].length),j=Math.floor(R()*groups[b].length);
+    const t=groups[a][i];groups[a][i]=groups[b][j];groups[b][j]=t;
+    const nc=groupCost(groups,P,session,mu,share);
+    if(nc<=cur)cur=nc;else{const u=groups[a][i];groups[a][i]=groups[b][j];groups[b][j]=u;}
+  }
+  groups.forEach(g=>g.sort((x,y)=>P[y].score-P[x].score));
+  return groups;
+}
+/* ---- pitch rating, results and groups ---- */
+let rounds=[],pr=[],myManifest=null,myVotes={},myResults=null,savedGroups={},pubGroups={},grp=null,gseed=1,orgReady=false,roundsSub=false,rateSig="",rateStarted=false,groupsStarted=false;
+const SES={gtm:"GTM"};
+const CRIT=[["clarity","Clarity","Did they show clearly where the business stands?"],["evidence","Evidence","Did they back it up with numbers or proof?"],["next","Next step","Is it clear what they need and what comes next?"]];
+const rid=(fid,s)=>fid+"__"+s;
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const f1=v=>v==null?"–":v.toFixed(1);
+const overall=v=>{const ks=v.customer!=null?GCRIT.map(c=>c[0]):["clarity","evidence","next"];return mean(ks.map(k=>v[k]));};
+
+function subRounds(){
+  if(roundsSub)return;roundsSub=true;
+  db.collection("rounds").onSnapshot(s=>{rounds=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderRate();if(orgReady){renderRounds();renderGroups();}},()=>{});
+}
+
+/* founder: rate pitches */
+async function loadRate(){
+  if(rateStarted){renderRate();return;}
+  rateStarted=true;subRounds();
+  try{const s=await db.doc("peerRatings/"+uid).get();myVotes=s.exists?(s.data().votes||{}):{};}catch(e){}
+  subResults();loadGroups();
+  renderRate();
+}
+function renderRate(){
+  const box=$("rate-body");if(!box||$("view-rate").hidden)return;
+  if(!myManifest){box.innerHTML='<div class="notice">Your founder profile was not found. Register in the portal first.</div>';return;}
+  const FAC=window.WORKSHOP_MODE==="admin",gm=myGroupFor("gtm"),open=rounds.filter(r=>r.status==="open"&&(FAC||(r.founderId!==myManifest.rosterId&&true)));
+  const sig=open.map(r=>r.id).join("|");
+  if(sig===rateSig&&box.children.length)return;
+  rateSig=sig;
+  if(!open.length){box.innerHTML='<div class="notice">No pitch is open for rating right now. This page updates by itself when one opens.</div>';return;}
+  box.innerHTML=open.map(r=>{const v=myVotes[r.id]||{};
+    return `<section class="block" style="margin-bottom:16px" data-r="${esc(r.id)}"><h2>Rate ${esc(r.name)}</h2><p class="sub">${SES[r.session]||""} pitch${r.phase==="room"?" (room after)":""}. Tap a number for each question, 5 is best.</p>
+    ${critFor(r.session).map(c=>`<div class="f"><span style="font-weight:500">${c[1]} <span class="hint">${c[2]}</span></span><div class="chips">${[1,2,3,4,5].map(n=>`<label class="chip"><input type="radio" name="${esc(r.id)}_${c[0]}" value="${n}"${v[c[0]]===n?" checked":""}><span>${n}</span></label>`).join("")}</div></div>`).join("")}
+    <label class="f">One line for them <span class="hint">(optional)</span><input type="text" data-c="comment" maxlength="200" value="${esc(v.comment||"")}"></label>
+    <div class="actions"><button class="primary" data-save="${esc(r.id)}">${Object.keys(v).some(k=>k!=="comment"&&k!=="at")?"Update rating":"Submit rating"}</button><span class="status" role="status"></span></div></section>`;}).join("");
+}
+$("rate-body").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-save]");if(!b)return;
+  const id=b.dataset.save,card=b.closest("section"),st=card.querySelector(".status"),r=rounds.find(x=>x.id===id);
+  if(!r||r.status!=="open"){setStatus(st,"This round has closed.","err");return;}
+  const v={};
+  for(const c of critFor(r.session)){const x=card.querySelector(`input[name="${id}_${c[0]}"]:checked`);if(!x){setStatus(st,"Rate every question.","err");return;}v[c[0]]=+x.value;}
+  v.comment=card.querySelector('[data-c="comment"]').value.trim();v.at=Date.now();
+  b.disabled=true;setStatus(st,"Saving…");
+  try{const ref=db.doc("peerRatings/"+uid),s=await ref.get(),votes=Object.assign({},s.exists?s.data().votes:{});votes[id]=v;await ref.set(window.WORKSHOP_FAC?{votes,name:window.WORKSHOP_FAC}:{votes});myVotes=votes;setStatus(st,"Saved. You can change it until the round closes.","ok");b.textContent="Update rating";}
+  catch(err){setStatus(st,"Could not save. Try again.","err");}
+  b.disabled=false;
+});
+function resultsHtml(){
+  const rs=myResults&&myResults.rounds?Object.values(myResults.rounds).sort((a,b)=>(a.phase==="room")-(b.phase==="room")):[];
+  if(!rs.length)return "";
+  return rs.map(r=>`<section class="block" style="margin-bottom:16px"><h2>Your ${esc(SES[r.session]||"")} pitch${r.phase==="room"?" (room after)":""}</h2>
+    <div class="stats"><div class="stat"><b>${f1(r.overall)}</b><span>overall, from ${esc(r.n)} ratings</span></div>${critFor(r.session).map(c=>`<div class="stat"><b>${f1(r[c[0]])}</b><span>${c[1]}</span></div>`).join("")}</div>
+    ${(r.comments||[]).length?`<div><h3 style="margin-bottom:6px">What people said</h3>${r.comments.map(t=>`<p class="sub" style="margin:4px 0">“${esc(t)}”</p>`).join("")}</div>`:""}</section>`).join("");
+}
+function renderResults(){const el=$("rate-results");if(el)el.innerHTML=resultsHtml();}
+
+/* founder: my groups */
+function loadGroups(){
+  if(!groupsStarted){groupsStarted=true;db.collection("groupsPublished").onSnapshot(s=>{pubGroups={};s.docs.forEach(d=>{pubGroups[d.id]=d.data();});renderMyGroups();renderSeats();renderExit();renderRate();},()=>{});}
+  renderMyGroups();
+}
+function renderMyGroups(){
+  const box=$("groups-body");if(!box)return;
+  if(!myManifest){box.innerHTML='<div class="notice">Your founder profile was not found. Register in the portal first.</div>';return;}
+  const out=["gtm"].map(s=>{const d=pubGroups[s];if(!d)return"";
+    const g=(d.groups||[]).find(g=>(g.members||[]).some(m=>m.id===myManifest.rosterId));if(!g)return"";
+    return `<section class="block" style="margin-bottom:16px"><h2>${SES[s]} session · Group ${esc(g.n)}</h2>
+    ${g.members.map(m=>`<div><b>${esc(m.name)}</b>${m.id===myManifest.rosterId?' <span class="tag">you</span>':""}<div class="status">${esc(m.startup)} · ${esc(m.program)}${(m.offer||[]).length?" · strong at "+esc(m.offer.join(", ")):""}</div></div>`).join("")}</section>`;}).join("");
+  box.innerHTML=out||'<div class="notice">Groups are not published yet. They will show here once the facilitators share them.</div>';
+}
+
+/* organizer: shared helpers */
+function votesFor(r){
+  const out=[];
+  pr.forEach(d=>{const v=(d.votes||{})[r.id];if(!v)return;const m=all.find(x=>x.id===d.id),fid=m&&m.rosterId;
+    if(fid&&fid===r.founderId)return;
+    out.push(Object.assign({},v,{rater:m?m.name:(d.name||"Organizer"),peer:!!fid}));});
+  return out;
+}
+function summ(vs,crit){const o={n:vs.length};(crit||CRIT).forEach(c=>{o[c[0]]=mean(vs.map(v=>v[c[0]]));});o.overall=mean(vs.map(overall));return o;}
+
+/* organizer: pitch rounds */
+function renderRounds(){
+  renderRun();renderStage();
+  const el=$("rounds-list");if(!el)return;renderBA();
+  renderNext();
+  if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#rounds-list"))return;
+  const rs=rounds.slice().sort((a,b)=>(b.openedAt||0)-(a.openedAt||0));
+  el.innerHTML=rs.length?rs.map(r=>{const vs=votesFor(r),cr=critFor(r.session),p=summ(vs.filter(v=>v.peer),cr),f=summ(vs.filter(v=>!v.peer),cr);
+    return `<tr><td>${esc(r.name)}</td><td>${esc(SES[r.session]||"")}${r.phase==="room"?" · room after":""}</td><td><span class="tag">${esc(r.status)}</span>${r.released?'<span class="tag">released</span>':""}</td>
+    <td class="n">${p.n} of ${rateInfo(r).total}</td><td class="n">${f1(p.overall)}</td><td class="n">${f.n}</td><td class="n">${f1(f.overall)}</td>
+    <td><div class="actions"><button class="ghost" data-act="toggle" data-id="${esc(r.id)}">${r.status==="open"?"Close":"Reopen"}</button><button class="ghost" data-act="release" data-id="${esc(r.id)}">Release to founder</button></div>
+    <details><summary>Ratings and comments</summary>${critFor(r.session).map(c=>`<div class="status">${c[1]}: peers ${f1(p[c[0]])} · facilitators ${f1(f[c[0]])}</div>`).join("")}
+    ${vs.filter(v=>v.comment).map(v=>`<div class="status">${esc(v.rater)} (${v.peer?"peer":"facilitator"}): ${esc(v.comment)}</div>`).join("")}</details></td></tr>`;}).join("")
+    :'<tr><td colspan="8" class="status">No rounds yet. Choose a founder and open one.</td></tr>';
+}
+function phSuffix(ph){return ph==="before"?"":"__"+ph;}
+function nextRows(){
+  const sess=$("r-session").value,ph=$("r-phase").value,sg=savedGroups[sess],gm={};
+  ((sg&&sg.groups)||[]).forEach(g=>(g.members||[]).forEach(m=>{gm[typeof m==="string"?m:m.id]=g.n;}));
+  const gsel=$("r-group");if(gsel){const n=((sg&&sg.groups)||[]).length,cur=gsel.value;if(gsel.options.length!==n+1){gsel.innerHTML='<option value="">All groups</option>'+Array.from({length:n},(_,i)=>`<option value="${i+1}">Group ${i+1}</option>`).join("");gsel.value=cur;}}
+  const nog=ph==="before";if(gsel){gsel.hidden=nog;if(nog)gsel.value="";}if($("next-gth"))$("next-gth").hidden=nog;
+  const gf=nog?"":(gsel?gsel.value:""),hide=$("r-hide")&&$("r-hide").checked;
+  return roster.map(r=>{const id=rid(r.id,sess)+phSuffix(ph),rd=rounds.find(x=>x.id===id),m=all.find(x=>x.rosterId===r.id);
+    return{id:r.id,name:r.name,startup:m&&m.startup||"",g:nog?"":(gm[r.id]||""),rd,rid:id};})
+    .filter(x=>(!gf||String(x.g)===gf)&&!(hide&&x.rd&&x.rd.status!=="open"))
+    .sort((a,b)=>(a.g||999)-(b.g||999)||a.name.localeCompare(b.name));
+}
+function rateInfo(rd){
+  const fid=rd.founderId,ph=rd.phase||"before";let pool=roster.map(r=>r.id);
+  pool=pool.filter(x=>x!==fid);
+  const byRoster=new Map(all.map(m=>[m.rosterId,m])),voted=new Set(pr.filter(d=>(d.votes||{})[rd.id]).map(d=>d.id)),wait=[];let done=0;
+  pool.forEach(id=>{const m=byRoster.get(id);if(m&&voted.has(m.id))done++;else{const r=roster.find(x=>x.id===id);wait.push(r?r.name:id);}});
+  return{done,total:pool.length,wait,fac:votesFor(rd).filter(v=>!v.peer).length};
+}
+function renderNext(){
+  const el=$("next-list");if(!el)return;
+  el.innerHTML=nextRows().map(x=>{const st=x.rd?(x.rd.status==="open"?"open":(x.rd.released?"closed, released":"closed")):"not yet";
+    const btn=!x.rd?`<button class="primary" data-op="open" data-f="${esc(x.id)}">Open round</button>`:x.rd.status==="open"?`<button class="ghost" data-op="close" data-f="${esc(x.id)}">Close round</button>`:`<button class="ghost" data-op="open" data-f="${esc(x.id)}">Open again</button>`;
+    return `<tr${x.rd&&x.rd.status==="open"?' style="font-weight:600"':""}><td>${esc(x.name)}<div class="status">${esc(x.startup)}</div></td>${$("r-phase").value==="before"?"":`<td class="n">${esc(x.g||"–")}</td>`}<td><span class="tag">${st}</span></td><td>${x.rd?(()=>{const q=rateInfo(x.rd),all_=q.total>0&&!q.wait.length;return `<b>${q.done}</b> of ${q.total} founders${all_?' <span class="tag">all in</span>':""}<div class="status">${q.fac} facilitator${q.fac===1?"":"s"}</div>${q.wait.length&&x.rd.status==="open"?`<details><summary>Waiting on ${q.wait.length}</summary><div class="status">${q.wait.map(esc).join(", ")}</div></details>`:""}`;})():"–"}</td><td>${btn}</td></tr>`;}).join("")||'<tr><td colspan="5" class="status">No founders match.</td></tr>';
+}
+async function openRound(fid){
+  const s=$("r-session").value,ph=$("r-phase").value,st=$("r-status"),f=roster.find(x=>x.id===fid);if(!f)return;
+  const id=rid(fid,s)+phSuffix(ph),ex=rounds.find(r=>r.id===id);
+  try{await db.doc("rounds/"+id).set({founderId:fid,name:f.name,session:s,phase:ph,status:"open",released:ex?!!ex.released:false,openedAt:Date.now()});setStatus(st,f.name+" is open. Founders can rate now.","ok");}
+  catch(e){setStatus(st,"Could not open the round.","err");}
+}
+$("next-list").addEventListener("click",async e=>{
+  const b=e.target.closest("button[data-op]");if(!b)return;const fid=b.dataset.f,s=$("r-session").value,ph=$("r-phase").value,id=rid(fid,s)+phSuffix(ph);
+  if(b.dataset.op==="open"){await openRound(fid);return;}
+  try{await db.doc("rounds/"+id).update({status:"closed"});setStatus($("r-status"),"Round closed.","ok");}catch(err){setStatus($("r-status"),"Could not close the round.","err");}
+});
+["r-session","r-phase","r-group","r-hide"].forEach(i=>$(i).addEventListener("change",renderNext));
+$("r-release-all").addEventListener("click",async()=>{
+  const st=$("r-status");let n=0,skipNoM=0,skipOpen=0;
+  try{
+    for(const r of rounds.filter(x=>!x.released)){
+      if(r.status==="open"){skipOpen++;continue;}
+      const m=all.find(x=>x.rosterId===r.founderId);if(!m){skipNoM++;continue;}
+      const vs=votesFor(r);if(!vs.length)continue;
+      const peers=vs.filter(v=>v.peer),sm=summ(peers.length?peers:vs,critFor(r.session));
+      const ref=db.doc("results/"+m.id),cur=await ref.get(),rs=Object.assign({},cur.exists?cur.data().rounds:{});
+      rs[r.id]=Object.assign({session:r.session,phase:r.phase||"before",n:sm.n,overall:sm.overall,comments:vs.filter(v=>v.comment).map(v=>v.comment)},Object.fromEntries(critFor(r.session).map(c=>[c[0],sm[c[0]]])));
+      await ref.set({rounds:rs});
+      await db.doc("rounds/"+r.id).set(Object.assign({},r,{id:undefined,released:true}));n++;
+    }
+    setStatus(st,"Released "+n+" rounds."+(skipOpen?" "+skipOpen+" still open, close them first.":"")+(skipNoM?" "+skipNoM+" skipped, no manifest.":""),skipOpen||skipNoM?"err":"ok");
+  }catch(err){setStatus(st,"Some rounds did not save. Try again.","err");}
+});
+$("rounds-list").addEventListener("click",async e=>{
+  const b=e.target.closest("button[data-act]");if(!b)return;
+  const r=rounds.find(x=>x.id===b.dataset.id),st=$("r-status");if(!r)return;
+  try{
+    if(b.dataset.act==="toggle"){await db.doc("rounds/"+r.id).set(Object.assign({},r,{id:undefined,status:r.status==="open"?"closed":"open"}));setStatus(st,r.status==="open"?"Round closed.":"Round reopened.","ok");}
+    else{
+      const m=all.find(x=>x.rosterId===r.founderId);
+      if(!m){setStatus(st,r.name+" has not submitted a manifest yet, so results cannot be released.","err");return;}
+      const vs=votesFor(r),peers=vs.filter(v=>v.peer),sm=summ(peers.length?peers:vs,critFor(r.session));
+      const ref=db.doc("results/"+m.id),cur=await ref.get(),rs=Object.assign({},cur.exists?cur.data().rounds:{});
+      rs[r.id]=Object.assign({session:r.session,phase:r.phase||"before",n:sm.n,overall:sm.overall,comments:vs.filter(v=>v.comment).map(v=>v.comment)},Object.fromEntries(critFor(r.session).map(c=>[c[0],sm[c[0]]])));
+      await ref.set({rounds:rs});
+      await db.doc("rounds/"+r.id).set(Object.assign({},r,{id:undefined,released:true}));
+      setStatus(st,"Released to "+r.name+".","ok");
+    }
+  }catch(err){setStatus(st,"That did not save.","err");}
+});
+
+/* organizer: groups */
+function scoreOf(m,s){
+  const r=rounds.find(x=>x.id===rid(m.rosterId,s)),self=s==="gtm"?m.gtm:m.ai;
+  let peer=null,fac=null;
+  if(r&&r.status==="closed"){const vs=votesFor(r);peer=mean(vs.filter(v=>v.peer).map(overall));const fv=vs.filter(v=>!v.peer).map(overall);if(fv.length)fac=mean(fv);}
+  const man=(ratings[m.id]||{})[s];if(man){fac=fac==null?man:(fac+man)/2;}
+  const parts=[peer,fac].filter(x=>x!=null);
+  if(parts.length)return{score:mean(parts),src:[peer!=null?"peer":"",fac!=null?"facilitator":""].filter(Boolean).join(" + ")};
+  return{score:self||3,src:"self"};
+}
+function people(s){
+  const seen=new Set(),out=[];
+  all.forEach(m=>{if(!m.rosterId||seen.has(m.rosterId))return;seen.add(m.rosterId);const sc=scoreOf(m,s);
+    out.push({id:m.rosterId,name:m.name,startup:m.startup,program:m.program,learn:m.learn||[],offer:m.offer||[],score:sc.score,src:sc.src});});
+  return out;
+}
+function gOptions(){return {s:$("g-session").value,size:Math.max(3,Math.min(10,+$("g-size").value||5))};}
+function renderGroups(){
+  const el=$("g-out");if(!el)return;
+  const {s}=gOptions();
+  if(!grp||grp.session!==s){const sv=savedGroups[s];if(sv){grp={session:s,size:sv.size,groups:(sv.groups||[]).map(g=>g.members.slice())};$("g-size").value=sv.size;}else grp=null;}
+  if(!grp){el.innerHTML='<div class="status">Pick a session and group size, then Generate groups.</div>';$("g-note").textContent="";return;}
+  const P={};people(s).forEach(p=>{P[p.id]=p;});
+  const have=new Set(grp.groups.flat());
+  const missing=roster.filter(r=>!P[r.id]).length;
+  $("g-note").textContent=(missing?missing+" founders have no manifest yet and are left out. ":"")+"Score = peer rating and facilitator rating when available, otherwise self-rating.";
+  el.innerHTML='<div class="gcards">'+grp.groups.map((g,i)=>{
+    const m=g.map(id=>P[id]).filter(Boolean),sc=m.map(p=>p.score),bia=m.filter(p=>p.program==="BIA C11").length;
+    const cover=m.reduce((a,p)=>a+p.learn.filter(sk=>m.some(o=>o!==p&&o.offer.includes(sk))).length,0),want=m.reduce((a,p)=>a+p.learn.length,0);
+    return `<section class="block"><h3>Group ${i+1} <span class="hint">${m.length} founders</span></h3>
+    <div class="status">Avg ${f1(mean(sc))} · range ${f1(Math.min(...sc))}–${f1(Math.max(...sc))} · ${bia} BIA, ${m.length-bia} BFB · ${cover}/${want} wanted skills covered</div>
+    ${m.map(p=>`<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="min-width:0"><b>${esc(p.name)}</b><div class="status">${esc(p.startup)} · ${esc(p.program)} · ${f1(p.score)} <span class="hint">(${esc(p.src)})</span></div></div>
+      <select data-move="${esc(p.id)}" aria-label="Move ${esc(p.name)}" style="width:auto">${grp.groups.map((_,j)=>`<option value="${j}"${j===i?" selected":""}>G${j+1}</option>`).join("")}</select></div>`).join("")}</section>`;}).join("")+'</div>';
+}
+$("g-gen").addEventListener("click",()=>{const {s,size}=gOptions();gseed=1;grp={session:s,size,groups:buildGroups(people(s),size,gseed,s)};setStatus($("g-status"),"Generated. Move anyone using the group menus, then save.","");renderGroups();});
+$("g-shuffle").addEventListener("click",()=>{const {s,size}=gOptions();gseed++;grp={session:s,size,groups:buildGroups(people(s),size,gseed,s)};setStatus($("g-status"),"New arrangement.","");renderGroups();});
+$("g-session").addEventListener("change",()=>{grp=null;setStatus($("g-status"),"");renderGroups();});
+$("g-out").addEventListener("change",e=>{
+  const sel=e.target.closest("select[data-move]");if(!sel||!grp)return;
+  const id=sel.dataset.move,to=+sel.value;
+  grp.groups=grp.groups.map(g=>g.filter(x=>x!==id));grp.groups[to].push(id);renderGroups();
+});
+$("g-save").addEventListener("click",async()=>{
+  if(!grp){setStatus($("g-status"),"Generate groups first.","err");return;}
+  try{await db.doc("groups/"+grp.session).set({session:grp.session,size:grp.size,groups:grp.groups.map((g,i)=>({n:i+1,members:g})),savedAt:Date.now()});setStatus($("g-status"),"Saved. Founders can't see it yet.","ok");}
+  catch(e){setStatus($("g-status"),"Could not save.","err");}
+});
+$("g-publish").addEventListener("click",async()=>{
+  if(!grp){setStatus($("g-status"),"Generate groups first.","err");return;}
+  const P={};people(grp.session).forEach(p=>{P[p.id]=p;});
+  try{await db.doc("groups/"+grp.session).set({session:grp.session,size:grp.size,groups:grp.groups.map((g,i)=>({n:i+1,members:g})),savedAt:Date.now()});
+    await db.doc("groupsPublished/"+grp.session).set({session:grp.session,groups:grp.groups.map((g,i)=>({n:i+1,members:g.map(id=>P[id]).filter(Boolean).map(p=>({id:p.id,name:p.name,startup:p.startup,program:p.program,offer:p.offer}))})),at:Date.now()});
+    setStatus($("g-status"),"Published. Founders see their group on the My groups tab.","ok");}
+  catch(e){setStatus($("g-status"),"Could not publish.","err");}
+});
+$("g-csv").addEventListener("click",async()=>{
+  if(!grp){setStatus($("g-status"),"Generate groups first.","err");return;}
+  const dl=await claude.use("downloads");if(!dl){setStatus($("g-status"),"Download is not available in this view.","err");return;}
+  const P={};people(grp.session).forEach(p=>{P[p.id]=p;});
+  const q=v=>'"'+String(Array.isArray(v)?v.join("; "):(v==null?"":v)).replace(/"/g,'""')+'"';
+  const lines=["group,name,startup,program,score,score_source,wants,offers"];
+  grp.groups.forEach((g,i)=>g.forEach(id=>{const p=P[id];if(p)lines.push([i+1,p.name,p.startup,p.program,p.score.toFixed(2),p.src,p.learn,p.offer].map(q).join(","));}));
+  try{await dl.save({filename:"groups-"+grp.session+".csv",data:lines.join("\n")});}catch(e){setStatus($("g-status"),"Download cancelled.","err");}
+});
+$("otabs").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-p]");if(!b)return;
+  ["sub","run","rounds","groups","gs","plans","frate","ba","sum"].forEach(p=>{$("p-"+p).hidden=p!==b.dataset.p;});
+  $("otabs").querySelectorAll("button").forEach(x=>x.setAttribute("aria-selected",x===b));
+  if(b.dataset.p==="frate"){rateSig="";loadRate();renderRate();}if(b.dataset.p==="run")renderRun();if(b.dataset.p==="gs")renderGS();if(b.dataset.p==="groups")renderGroups();if(b.dataset.p==="plans")renderPlans();if(b.dataset.p==="exit")renderExits();if(b.dataset.p==="ba")renderBA();if(b.dataset.p==="sum")renderSum();
+});
+
+let me=null,orgStarted=false;
+function route(){
+  const h=location.hash.slice(1),isOrg=window.WORKSHOP_MODE==="admin";
+  document.querySelector(".wrap").hidden=isOrg;$("org").hidden=!isOrg;
+  if(isOrg){if(!orgStarted){orgStarted=true;initOrg(me);}return;}
+  const v=h==="rate"||h==="groups"||h==="work"||h==="scores"?h:"work";
+  ["mine","rate","groups","work","scores"].forEach(x=>{$("view-"+x).hidden=x!==v;});
+  $("fnav").querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",(b.dataset.h||"mine")===v));
+  if(!db||!uid)return;
+  if(v==="rate")loadRate();if(v==="groups")loadGroups();if(v==="work")loadWork();if(v==="scores")loadScores();
+}
+$("fnav").addEventListener("click",e=>{const b=e.target.closest("button[data-h]");if(b){if(!b.dataset.h){location.href="/manifest";return;}location.hash=b.dataset.h;}});
+window.addEventListener("hashchange",route);
+/* ---- worksheets: problem card, hot-seat plan, facilitator checks ---- */
+let stageB=false,plans={},cards={},planChecks={},workStarted=false,plansSub=false,openPlan=null,cardSession="gtm",timer={t:0,run:false,id:null};
+const CARD={
+  gtm:[["a_startup","My startup's name","in"],["a_sell","What I sell, in one line, as a customer would say it","in"],["a_how","The way I get customers today is…","ta"],["a_headache","My biggest GTM headache right now","ta"],["a_path","Do I have customers?","sel",null,["I have customers","I don't have customers yet"]],
+    ["a_last10","My top 3 sources of customers, and roughly what share each brings","ta","1","One per line: source, share of customers (%), could I do more of it next week (y/n)"],["a_n1","Customers to date","in","1"],["a_n5","Leads → paying customers (%)","in","1"],["a_n6","What it costs me to get one customer (₹)","in","1"],
+    ["a_f_who","Who exactly are my first 100? (role, type of business or person, place)","ta","2"],["a_f_names","Name 3 of them: real people or businesses","ta","2"],["a_f_spoken","How many have I spoken to about the problem?","in","2"]],
+  ai:[["c1","The startup in one line"],["c2","The task, workflow or tool I want help with"],["c3","Who does it today and how many hours a week"],["c4","Tools I already use for it"],["c5","What good looks like, and who would check it"],["c6","Limits: budget, data, team"]]};
+const STEPS=[[0,3,"Present","Founder reads the problem card. No interruptions."],[3,8,"Questions only","Ask questions. No advice yet."],[8,18,"Build","Fill the plan, starting from the 90-day goal."],[18,22,"Choose","Founder picks the top three actions."],[22,25,"Read back","Founder reads the plan aloud. Check it against the four tests."]];
+const REQ=["goal","b1_what","b1_measure","m1","m2","m3","weekly","fa_what","fa_date","act1","act2","act3","buddy"];
+const CHECKS=[["c1","Goal is a number with a date"],["c2","First action can start tomorrow and has an owner"],["c3","Fits one person's time"],["c4","Names who will help"]];
+const PLAN_KEYS=["goal","b1_what","b1_why","b1_measure","b2_what","b2_why","b2_measure","b3_what","b3_why","b3_measure","m1","m2","m3","weekly","fa_what","fa_who","fa_date","risk","help","act1","act2","act3","buddy"];
+const planId=(s,fid)=>s+"__"+fid;
+const myGroupFor=s=>{const d=pubGroups[s];if(!d||!myManifest)return null;return (d.groups||[]).find(g=>(g.members||[]).some(m=>m.id===myManifest.rosterId))||null;};
+function subPlans(){
+  if(plansSub)return;plansSub=true;
+  db.collection("plans").onSnapshot(s=>{plans={};s.docs.forEach(d=>{plans[d.id]=d.data();});renderSeats();renderExit();syncPlan();if(orgReady)renderPlans();},()=>{});
+}
+async function loadWork(){
+  if(!workStarted){
+    workStarted=true;subPlans();
+    try{const s=await db.doc("cards/"+uid).get();cards=s.exists?s.data():{};syncStartup();}catch(e){}
+    const gs=pubGroups;if(!Object.keys(gs).length)loadGroups();
+    const box=$("work-body");
+    box.innerHTML='<div id="work-main"><section class="block" style="margin-bottom:16px"><h2>My problem card</h2><p class="sub">Fill it before your hot seat. Only you can see it until you start your hot seat, then your group sees it.</p><input type="hidden" id="card-session" value="gtm"><div id="card-form" class="f" style="gap:12px"></div></section><section class="block" id="work-b" style="margin-bottom:16px" hidden></section><section class="block" id="work-pitch" style="margin-bottom:16px" hidden></section><section class="block" id="work-seats" style="margin-bottom:16px"></section></div><div id="work-sheet" hidden></div>';
+    $("card-session").addEventListener("change",()=>{cardSession=$("card-session").value;renderCard();});
+    $("card-form").addEventListener("click",saveCard);
+    $("work-b").addEventListener("click",e=>{if(!e.target.closest("[data-openb]"))return;const mine=myManifest&&plans[planId("gtm",myManifest.rosterId)];openPlan=mine?planId("gtm",myManifest.rosterId):"draft";showSheet(openPlan);});
+    try{db.doc("stage/gtm").onSnapshot(s=>{const b=!!(s.exists&&s.data()&&s.data().stage==="b");if(b!==stageB){stageB=b;renderCard();renderBBox();if(openPlan===null)renderSeats();}},()=>{});}catch(e){}
+    $("work-seats").addEventListener("click",seatClick);$("work-pitch").addEventListener("click",pitchClick);
+    $("card-form").addEventListener("change",e=>{if(e.target.dataset&&e.target.dataset.k==="a_path")applyPath();});
+    subResults();
+  }
+  if(openPlan){showSheet(openPlan);return;}
+  $("work-main").hidden=false;$("work-sheet").hidden=true;renderExit();
+  renderCard();renderSeats();
+}
+function renderBBox(){
+  const el=$("work-b");if(!el)return;
+  if(!stageB){el.hidden=true;return;}
+  const mine=myManifest&&plans[planId("gtm",myManifest.rosterId)],src=mine||cards.gtmB||{},n=Object.entries(src).filter(([k,x])=>GKEYS.includes(k)&&String(x||"").trim()).length;
+  el.hidden=false;
+  el.innerHTML=`<h2>Worksheet B</h2><p class="sub">Worksheet A is closed. Build your plan for the next 14 days here. It saves when you leave a field, and you can keep working on it in your hot seat.</p><div class="actions"><button class="primary" data-openb="1">${n?"Continue worksheet B":"Open worksheet B"}</button><span class="status">${n} answer${n===1?"":"s"} saved so far</span></div>`;
+}
+function renderCard(){
+  const el=$("card-form");if(!el)return;const v=cards[cardSession]||{};
+  if(stageB){el.innerHTML='<div class="notice">Worksheet A is closed. Your answers are saved.</div>'+(CARD[cardSession].filter(c=>v[c[0]]).map(c=>`<div><div class="status">${esc(c[1])}</div><div>${esc(v[c[0]])}</div></div>`).join("")||'<div class="status">You did not save worksheet A.</div>');renderPitch();renderBBox();return;}
+  el.innerHTML=CARD[cardSession].map(c=>fx(c,v[c[0]]||"","data-k")).join("")+'<div class="actions"><button class="primary" data-savecard="1">Save card</button><span class="status" id="card-status" role="status"></span></div>';applyPath();renderPitch();
+}
+/* ---- My 2-minute pitch: built from worksheet A, read straight off the screen ---- */
+function buildPitch(c,m){
+  const t=x=>String(x||"").trim().replace(/[.\s]+$/,""),g=(k,l)=>t(c[k])||"["+l+"]",rs=x=>t(x).replace(/^₹\s*/,"");
+  const nm=(m&&m.name)||"[your name]",su=(m&&m.startup)||"[your startup]",nl=x=>t(x).split(/\n+/).map(t).filter(Boolean).join("; ");
+  const intro=["What I do",`I'm ${nm}, and this is ${su}. ${g("a_sell","what I sell")}.`];
+  const how=["Channel",`The way I get customers today is ${g("a_how","how I get customers")}.`];
+  const head=["My biggest headache",`Right now my biggest headache is ${g("a_headache","my biggest headache")}.`];
+  if(c.a_path==="I have customers")return[intro,
+    ["Customer",`We have ${g("a_n1","customers to date")} customers so far.`],
+    how.concat([]).map((x,i)=>i?x+` The share of customers from each source: ${nl(c.a_last10)||"[top 3 sources and their share]"}.`:x),
+    ["Numbers",`${rs(c.a_n5)||"[conversion %]"}% of the people I talk to become paying customers, and it costs me about ₹${rs(c.a_n6)||"[cost per customer]"} to win one.`],
+    head];
+  return[intro,
+    ["Customer",`My first customers are ${g("a_f_who","who my first 100 are")}. For example: ${nl(c.a_f_names)||"[3 names]"}.`],
+    how.map((x,i)=>i?x+` So far I have spoken to ${rs(c.a_f_spoken)||"[number]"} of them.`:x),
+    head];
+}
+function buildRepitch(p,m){
+  const c=p.card||{},t=x=>String(x||"").trim().replace(/[.\s]+$/,""),g=(v,l)=>t(v)||"["+l+"]",N=x=>{const z=String(x||"").replace(/,/g,"").match(/\d+(\.\d+)?/);return z?z[0]:"";},
+    LC=/^(A|An|The|I|We|My|Our|They|Their|People|Most|Some|Many|Few|Fewer|More|Less|No|One|Two|Three|Four|Five|Message|Spend|Reach|Post|Run|Call|Visit|Get|Add|Double|Keep|Change|Test|Offer|Talk|Ask|Send|Meet|Launch|Build|Interview|Sell|Find|Write|Try|Show|Use|Move|Stop|Start|Make|Hold|Share|Email|Dm|Customers|Owners|Founders|If|When|At|Over|Within|Introductions?|Pay|Work|Working|Hire|Partner|Create|Set|Join|Host|Collect|Speak|Demo|Shoot|Record|Pitch|List|Apply|Convert|Follow|Review|Track|Count|Contact|Onboard|Install|Ship|Order|Buy|Book|Schedule|Invite|Reply|Offer|Small|Young|Urban|Busy|Early|First|Parents|Students|Teachers|Doctors|Home|Local|Women|Men|Families|Couples|Independent|Solo|Freelance|Corporate|Existing|New|Repeat|Paying|Shop|Shops|Restaurant|Restaurants|Cafe|Cafes|Retailers|Brands|Teams|Managers|Buyers|Sellers|Individuals|Professionals|Anyone|Everyone|Someone)\b/,
+    lc=x=>{x=t(x);return LC.test(x)?x[0].toLowerCase()+x.slice(1):x;},
+    cut=x=>lc(t(x).replace(/^(?:i will )?(?:keep going|change[^,.]*?) if\s+/i,"")),cap=x=>{x=t(x);return x?x[0].toUpperCase()+x.slice(1):x;},
+    dt=x=>{const d=new Date(String(x||"")+"T00:00:00");return isNaN(d)?"[date]":d.toLocaleDateString("en-IN",{day:"numeric",month:"short"});};
+  const has=c.a_path==="I have customers",nm=(m&&m.name)||p.name||"[your name]",su=(m&&m.startup)||p.startup||"[your startup]",chan=t(p.v_primary||p.b_primary)||"[my main channel]";
+  const nums=has
+    ?["Numbers",`We have ${N(c.a_n1)||"[customers]"} customers so far. About ${N(p.m_conv||c.a_n5)||"[conversion]"}% of enquiries turn into paying customers, and it costs me about ₹${N(p.m_cac||c.a_n6)||"[cost per customer]"} to win one.`]
+    :["What I have learned",`I have spoken to ${N(p.ev1||c.a_f_spoken)||"0"} people. ${N(p.ev2)||"0"} told me the problem is real, and ${N(p.ev4)||"0"} have already committed.`];
+  return[
+    ["What I do",`I'm ${nm}, and this is ${su}. ${cap(g(c.a_sell,"what I sell"))}.`],
+    ["Who I am going after",`My best customers are ${lc(g(p.v_seg||p.b_seg,"my segment"))}. ${cap(g(p.v_msg||p.b_promise,"my message"))}.`],
+    nums,
+    ["My channel",`I am going after them through ${chan}. By the end of this, my goal is ${lc(g(p.v_goal,"my goal"))}.`],
+    ["What has to be true",`The one thing that has to be true is ${lc(g(p.r_assume,"my riskiest assumption"))}. To test it, I will ${lc(g(p.r_test,"my test"))}.`],
+    ["The next 14 days",`Over the next 14 days, I will ${lc(g(p.e_what,"what I will do"))}. I start on ${dt(p.e_start)} and finish on ${dt(p.e_end)}. I will keep going if ${cut(g(p.e_keep,"my keep number"))}, and I will change course if ${cut(g(p.e_change,"my change trigger"))}.`],
+    ["What I need from you",`The one thing I need from this room is ${lc(g(p.e_ask,"my ask"))}.`]];
+}
+const myDonePlan=()=>{const p=myManifest&&plans[planId("gtm",myManifest.rosterId)];return p&&p.status==="done"?p:null;};
+function currentPitch(){const d=myDonePlan();return d?{re:true,P:buildRepitch(d,myManifest)}:{re:false,P:buildPitch(cards.gtm||{},myManifest)};}
+function renderPitch(){
+  const el=$("work-pitch");if(!el)return;const c=cards.gtm;
+  const done=myDonePlan();
+  if(!done&&(stageB||cardSession!=="gtm"||!c||!c.a_path)){el.hidden=true;return;}
+  const cp=currentPitch(),P=cp.P,words=P.map(p=>p[1]).join(" ").split(/\s+/).length;
+  el.hidden=false;
+  el.innerHTML=`<h2>${cp.re?"My updated pitch":"My 2-minute pitch"}</h2><p class="sub">${cp.re?"Written from your hot-seat plan when you marked it done. Change your plan and mark it done again to refresh it.":"Written from your worksheet A, saved version. Read it as it is, or change worksheet A and save to update it."} About ${Math.round(words/2.2)} seconds.</p>
+  ${P.map(p=>`<div class="f"><span class="status">${esc(p[0])}</span><div>${esc(p[1])}</div></div>`).join("")}
+  <div class="actions"><button class="primary" data-pitch="show">Show full screen</button><button class="ghost" data-pitch="copy">Copy text</button><span class="status" id="pitch-status" role="status"></span></div>`;
+}
+function pitchClick(e){
+  const b=e.target.closest("[data-pitch]");if(!b)return;const P=currentPitch().P;
+  if(b.dataset.pitch==="copy"){try{navigator.clipboard.writeText(P.map(p=>p[1]).join("\n\n"));setStatus($("pitch-status"),"Copied.","ok");}catch(err){setStatus($("pitch-status"),"Could not copy.","err");}return;}
+  let o=$("pitch-full");if(!o){o=document.createElement("div");o.id="pitch-full";o.setAttribute("role","dialog");o.setAttribute("aria-label","Pitch");o.style.cssText="position:fixed;inset:0;z-index:99;overflow:auto;background:var(--bg,#fff);color:var(--fg,#111);padding:32px 6vw;font-size:clamp(22px,3.2vw,38px);line-height:1.4";document.body.appendChild(o);}
+  o.innerHTML=`<button class="ghost" data-x="1" style="position:fixed;top:12px;right:12px">Close</button>`+P.map(p=>`<p style="margin:0 0 .8em"><span style="display:block;font-size:.4em;letter-spacing:.08em;text-transform:uppercase;opacity:.6">${esc(p[0])}</span>${esc(p[1])}</p>`).join("");
+  o.hidden=false;o.onclick=ev=>{if(ev.target.closest("[data-x]"))o.hidden=true;};
+}
+document.addEventListener("keydown",e=>{const o=$("pitch-full");if(e.key==="Escape"&&o&&!o.hidden)o.hidden=true;});
+function syncStartup(){const s=((cards||{}).gtm||{}).a_startup;if(s&&myManifest)myManifest.startup=s;}
+async function saveCard(e){
+  if(!e.target.closest("[data-savecard]"))return;
+  const v={};$("card-form").querySelectorAll("[data-k]").forEach(t=>{v[t.dataset.k]=t.value.trim();});
+  cards=Object.assign({},cards,{[cardSession]:v});
+  try{await db.doc("cards/"+uid).set(cards);syncStartup();setStatus($("card-status"),"Saved.","ok");renderSeats();renderPitch();}catch(err){setStatus($("card-status"),"Could not save.","err");}
+}
+function renderSeats(){
+  const el=$("work-seats");if(!el)return;renderPitch();
+  if(!myManifest){el.innerHTML='<div class="notice">Your founder profile was not found. Register in the portal first.</div>';return;}
+  const out=["gtm"].map(s=>{
+    const g=myGroupFor(s);
+    if(!g)return `<h2>${SES[s]} hot seats</h2><p class="sub">Your group appears here once the facilitators publish groups.</p>`;
+    const rows=g.members.map(m=>{
+      const id=planId(s,m.id),p=plans[id],mine=m.id===myManifest.rosterId;
+      let btn="";
+      if(p)btn=`<button class="ghost" data-open="${esc(id)}">Open worksheet</button>`;
+      else if(mine)btn=(cards[s]&&cards[s][CARD[s][0][0]])?`<button class="primary" data-start="${s}">Start my hot seat</button>`:'<span class="status">Save your card first</span>';
+      return `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b>${esc(m.name)}</b>${mine?' <span class="tag">you</span>':""}<div class="status">${esc(m.startup)} · ${p?(p.status==="done"?"Done":"Live now"):"Not started"}</div></div>${btn}</div>`;}).join("");
+    return `<h2>${SES[s]} hot seats · Group ${esc(g.n)}</h2>${rows}`;}).join("");
+  el.innerHTML=out;
+}
+function viewSheet(p,note){
+  const sh=$("work-sheet");$("work-main").hidden=true;sh.hidden=false;
+  sh.innerHTML=`<div class="actions" style="margin-bottom:12px"><button class="ghost" data-back="1">Back</button><span class="status">${esc(note)}</span></div><div id="peek">${gtmSheet(p,[],true,!p.__plan)}</div>`;
+  fillRO($("peek"),p);
+}
+async function seatClick(e){
+  const o=e.target.closest("[data-open]"),st=e.target.closest("[data-start]");
+  if(o){openPlan=o.dataset.open;const op=plans[openPlan];if(op&&op.session==="gtm"&&myManifest&&op.founderId!==myManifest.rosterId){const g=myGroupFor("gtm");viewSheet(Object.assign({__plan:1},op),"Read only. It updates as "+((op.name||"they").split(" ")[0])+" types.");return;}showSheet(openPlan);return;}
+  if(st){
+    const s=st.dataset.start,g=myGroupFor(s);if(!g||!cards[s])return;
+    try{const nd=Object.assign({},cards.gtmB||{},{session:s,founderId:myManifest.rosterId,name:myManifest.name,startup:myManifest.startup,n:g.n,status:"live",card:cards[s],startedAt:Date.now()});
+      await db.doc("plans/"+planId(s,myManifest.rosterId)).set(nd);plans[planId(s,myManifest.rosterId)]=nd;
+      openPlan=planId(s,myManifest.rosterId);showSheet(openPlan);}catch(err){}
+  }
+}
+function fld(k,label,tag){const t=tag==="ta"?`<textarea data-f="${k}" style="min-height:64px"></textarea>`:`<input type="text" data-f="${k}">`;return `<label class="f">${label}${t}</label>`;}
+function draftPlan(){return Object.assign({session:"gtm",founderId:myManifest.rosterId,name:myManifest.name,startup:myManifest.startup,n:"",card:cards.gtm||{}},cards.gtmB||{});}
+async function saveField(id,patch){
+  if(id==="draft"){cards=Object.assign({},cards,{gtmB:Object.assign({},cards.gtmB,patch)});await db.doc("cards/"+uid).set(cards);return;}
+  await db.doc("plans/"+id).update(Object.assign({updatedAt:Date.now()},patch));
+}
+function showSheet(id){
+  const p=id==="draft"?draftPlan():plans[id],sh=$("work-sheet");$("work-main").hidden=true;sh.hidden=false;
+  if(!p){sh.innerHTML='<div class="notice">This worksheet has not started yet.</div><div class="actions" style="margin-top:12px"><button class="ghost" data-back="1">Back</button></div>';return;}
+  const g=myGroupFor(p.session),members=g?g.members:[];
+  if(p.session==="gtm"){sh.innerHTML=gtmSheet(p,members,false,id==="draft");
+    if(p.card&&p.founderId===(myManifest&&myManifest.rosterId)){const u={},c=p.card,num=x=>{const m=String(x||"").replace(/,/g,"").match(/\d+(\.\d+)?/);return m?m[0]:"";};
+      if(gT(p)){if(!p.m_conv&&c.a_n5)u.m_conv=num(c.a_n5);if(!p.m_cac&&c.a_n6)u.m_cac=num(c.a_n6);}
+      else if(!p.ev1&&c.a_f_spoken)u.ev1=num(c.a_f_spoken);
+      if(Object.keys(u).length){Object.assign(p,u);try{saveField(id,u);}catch(err){}}}
+    syncPlan(true);updateClock();renderScores();return;}
+  const card=CARD[p.session].map(c=>`<div><div class="status">${esc(c[1])}</div><div>${esc((p.card||{})[c[0]]||"–")}</div></div>`).join("");
+  sh.innerHTML=`<div class="actions" style="margin-bottom:12px"><button class="ghost" data-back="1">Back</button><span class="status">${esc(SES[p.session])} · Group ${esc(p.n)}</span></div>
+  <section class="block" style="margin-bottom:16px"><h2>${esc(p.name)}</h2><div class="status">${esc(p.startup||"")}</div>
+    <div id="tm" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center"><div class="stat"><b id="tm-clock">25:00</b><span id="tm-step">Press start when the hot seat begins</span></div>
+    <div class="actions"><button class="ghost" data-tm="go">Start</button><button class="ghost" data-tm="pause">Pause</button><button class="ghost" data-tm="reset">Reset</button></div></div></section>
+  <section class="block" style="margin-bottom:16px"><h3>Problem card</h3>${card}</section>
+  <section class="block" style="margin-bottom:16px"><h3>90-day plan</h3>
+    ${fld("goal","90-day goal: one number and a date","ta")}
+    ${[1,2,3].map(n=>`<div class="f"><span style="font-weight:500">Bet ${n}${n===1?"":" (optional)"}</span><div class="row">${fld("b"+n+"_what","What we will do","ta")}${fld("b"+n+"_why","Why it should work","ta")}${fld("b"+n+"_measure","How we will measure it")}</div></div>`).join("")}
+    <div class="row">${fld("m1","Month 1 milestone")}${fld("m2","Month 2 milestone")}${fld("m3","Month 3 milestone")}</div>
+    ${fld("weekly","The one number to watch every Friday")}
+    <div class="row">${fld("fa_what","First action (within 7 days)")}${fld("fa_who","Owner")}${fld("fa_date","Date")}</div>
+    ${fld("risk","Biggest risk, and what we do about it","ta")}${fld("help","Help needed: a peer, a mentor or a resource","ta")}</section>
+  <section class="block" style="margin-bottom:16px"><h3>The founder's top 3 actions</h3>${fld("act1","1 (starts first)")}${fld("act2","2")}${fld("act3","3")}
+    <label class="f">Buddy who will check in within a week<select data-f="buddy"><option value="">Choose</option>${members.filter(m=>m.id!==p.founderId).map(m=>`<option value="${esc(m.name)}">${esc(m.name)}</option>`).join("")}</select></label></section>
+  <div class="actions"><button class="primary" data-done="1">Mark hot seat done</button><span class="status" id="sheet-status" role="status">Changes save as you type and show to your group live.</span></div>`;
+  syncPlan(true);updateClock();
+}
+function syncPlan(force){
+  if(!openPlan)return;const p=openPlan==="draft"?draftPlan():plans[openPlan],sh=$("work-sheet");if(!p||!sh||sh.hidden)return;
+  sh.querySelectorAll("[data-f]").forEach(el=>{if(!force&&document.activeElement===el)return;const v=p[el.dataset.f]||"";if(el.value!==v)el.value=v;});
+  const b=sh.querySelector("[data-done]");if(b)b.textContent=p.status==="done"?"Reopen hot seat":"Mark hot seat done";
+  if(p.session==="gtm"){gcalc(p);secCounts(sh);}
+}
+function updateClock(){
+  const c=$("tm-clock");if(!c)return;
+  const T=tcfg(),left=Math.max(0,T.d-timer.t),mm=String(Math.floor(left/60)).padStart(2,"0"),ss=String(left%60).padStart(2,"0");
+  c.textContent=mm+":"+ss;
+  const mins=timer.t/60,s=T.s.find(x=>mins>=x[0]&&mins<x[1]);
+  $("tm-step").textContent=timer.t===0&&!timer.run?"Press start when the hot seat begins":(s?s[2]+": "+s[3]:"Time is up");
+}
+function tick(){timer.t++;updateClock();if(timer.t>=tcfg().d)stopTimer();}
+function stopTimer(){timer.run=false;if(timer.id){clearInterval(timer.id);timer.id=null;}}
+$("view-work").addEventListener("click",async e=>{
+  if(e.target.closest("[data-back]")){openPlan=null;stopTimer();timer.t=0;$("work-sheet").hidden=true;$("work-main").hidden=false;renderCard();renderBBox();renderSeats();renderExit();return;}
+  if(e.target.closest("[data-copyb]")&&openPlan){
+    const p=plans[openPlan]||{},m={v_seg:p.b_seg,v_msg:p.b_promise,v_primary:p.b_primary},u={};
+    Object.keys(m).forEach(k=>{if(!p[k]&&m[k])u[k]=m[k];});
+    if(Object.keys(u).length){u.updatedAt=Date.now();try{await db.doc("plans/"+openPlan).update(u);setStatus($("sheet-status"),"Copied from worksheet B.","ok");}catch(err){setStatus($("sheet-status"),"Could not save.","err");}}
+    else setStatus($("sheet-status"),"Nothing to copy, or already filled.","");
+    return;}
+  const tm=e.target.closest("[data-tm]");
+  if(tm){const a=tm.dataset.tm;if(a==="go"&&!timer.run){timer.run=true;timer.id=setInterval(tick,1000);}if(a==="pause")stopTimer();if(a==="reset"){stopTimer();timer.t=0;}updateClock();return;}
+  if(e.target.closest("[data-done]")&&openPlan){const p=plans[openPlan];
+    const goDone=!(p&&p.status==="done");
+    try{await db.doc("plans/"+openPlan).update({status:goDone?"done":"live",updatedAt:Date.now()});if(p)p.status=goDone?"done":"live";
+      if(goDone){openPlan=null;stopTimer();$("work-sheet").hidden=true;$("work-main").hidden=false;renderCard();renderBBox();renderSeats();renderPitch();const wp=$("work-pitch");if(wp&&!wp.hidden)wp.scrollIntoView({behavior:"smooth",block:"start"});}
+    }catch(err){setStatus($("sheet-status"),"Could not save.","err");}}
+});
+$("view-work").addEventListener("change",async e=>{
+  const el=e.target.closest("[data-f]");if(!el||!openPlan)return;
+  try{await saveField(openPlan,{[el.dataset.f]:el.value.trim()});setStatus($("sheet-status"),"Saved.","ok");}
+  catch(err){setStatus($("sheet-status"),"Could not save. Check your connection.","err");}
+});
+
+/* ---- GTM worksheets: A (problem card), B (builder, in the hot seat), C (updated gtm v1) ---- */
+const GCRIT=[["customer","Customer","How specific is the segment? 1 = everyone, SMEs, gen z. 3 = a real group, too broad to list. 5 = could list 20 names and name the trigger."],["channel","Channel","How do customers find them? 1 = none, or five at once. 3 = one channel, untested. 5 = one channel with evidence or a clear test."],["message","Message","Why would a customer switch? 1 = lists features. 3 = names the problem in the founder's words. 5 = customer's words, the current alternative and proof."],["numbers","Numbers","Real numbers? 1 = none. 3 = a few, mostly guesses. 5 = real numbers plus a weekly target worked out from them."],["plan","Plan","Is the next step specific? 1 = more marketing. 3 = a direction, no number or date. 5 = a weekly number, a date, and a test that could prove them wrong."]];
+const critFor=s=>s==="gtm"?GCRIT:CRIT;
+const GSTEPS=[[0,4,"Present","Walk through sections 1, 3 and 5 of worksheet B. Nobody interrupts."],[4,12,"Questions only","No advice. Everyone asks at least 2 questions."],[12,18,"Suggestions","One each, starting: if I were you, I'd… The founder listens and writes them down."],[18,22,"Decide","The founder says out loud what they keep, change and drop."]];
+const GREQ=["b_seg","b_trigger","b_promise","b_primary","r_assume","r_test","v_seg","v_msg","v_primary","e_what","e_start","e_end","e_keep","e_change"];
+const GCHECKS=[["c1","Segment narrow enough to list 20 names"],["c2","One primary channel, named exactly"],["c3","Experiment has a start date and a number that decides keep or change"],["c4","Plan differs from worksheet A, or the founder can say why"]];
+const GKEYS=["b_seg","b_trigger","b_pain","b_who","b_gather","b_problem","b_alt","b_promise","b_proof","b_primary","b_backup","b_motion","f_drop","b_ask","b_leak","m_cap","m_bar","ev1","ev2","ev3","ev4","tf1","tf2","tf3","tf4","tf5","m_target","m_price","m_conv","m_weeks","m_cac","r_assume","r_test","r_wrong","v_seg","v_msg","v_primary","v_goal","e_what","e_start","e_end","e_keep","e_change","e_ask"];
+[1,2,3,4,5].forEach(i=>{GKEYS.push("ch"+i+"_n","ch"+i+"_1","ch"+i+"_2","ch"+i+"_3","ch"+i+"_4","f"+i+"_w","f"+i+"_p");});
+const gT=p=>((p&&p.card)||{}).a_path==="I have customers";
+const reqOf=(s,p)=>s==="gtm"?GREQ.concat(gT(p)?["m_conv","m_weeks","tf1","tf2","tf3"]:["m_cap","m_bar","ev1","ev4","b_ask"]):REQ;
+const checksOf=s=>s==="gtm"?GCHECKS:CHECKS;
+const planKeysOf=s=>s==="gtm"?GKEYS:PLAN_KEYS;
+function tcfg(){const p=openPlan&&plans[openPlan];if(p&&p.session==="gtm"){const S=GSTEPS.map(x=>x.slice());if(!gT(p))S[0][3]=S[0][3].replace("1, 3 and 5","1, 3 and 4");return{d:1320,s:S};}return{d:1500,s:STEPS};}
+function fx(c,v,attr){
+  const hint=typeof c[4]==="string"?`<span class="hint">${esc(c[4])}</span>`:"";
+  let ctl;
+  if(c[2]==="sel")ctl=`<select ${attr}="${c[0]}"><option value="">Choose</option>${c[4].map(o=>`<option${v===o?" selected":""}>${esc(o)}</option>`).join("")}</select>`;
+  else if(c[2]==="in")ctl=`<input type="text" ${attr}="${c[0]}" value="${esc(v)}">`;
+  else ctl=`<textarea ${attr}="${c[0]}" style="min-height:64px">${esc(v)}</textarea>`;
+  return `<label class="f"${c[3]?` data-path="${c[3]}"`:""}>${esc(c[1])}${hint}${ctl}</label>`;
+}
+function applyPath(){
+  const f=$("card-form");if(!f)return;const pv=f.querySelector('[data-k="a_path"]');if(!pv)return;
+  const want=pv.value==="I have customers"?"1":(pv.value?"2":"");
+  f.querySelectorAll("[data-path]").forEach(l=>{l.hidden=l.dataset.path!==want;});
+}
+let resultsSub=false;
+function subResults(){
+  if(resultsSub||!db||!uid)return;resultsSub=true;
+  db.doc("results/"+uid).onSnapshot(s=>{myResults=s.exists?s.data():null;renderResults();renderScores();},()=>{});
+}
+function gcalc(p,root){
+  const $q=id=>(root||document.querySelector("#work-sheet"))&&(root||document.querySelector("#work-sheet")).querySelector("#"+id),N=x=>{const m=String(x==null?"":x).replace(/,/g,"").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null;},nf=x=>Math.round(x).toLocaleString("en-IN"),pc=(a,b)=>b>0&&a!=null?Math.round(a*100/b):null;
+  const set=(id,t)=>{const q=$q(id);if(q)q.textContent=t;};
+  if(gT(p)){
+    const sh=[1,2,3,4,5].map(i=>({n:(p["ch"+i+"_n"]||"").trim(),v:N(p["ch"+i+"_1"])})).filter(x=>x.v!=null),top=sh.sort((a,b)=>b.v-a.v)[0],sum=sh.reduce((a,b)=>a+b.v,0);
+    set("b3-calc",top&&top.v>=70?"One channel brings "+top.v+"% of your customers"+(top.n?" ("+top.n+")":"")+". That is a risk if it dries up.":(sh.length&&sum<90?"Your shares add up to "+sum+"%. Where do the rest come from?":""));
+    const t1=N(p.tf1),t2=N(p.tf2),t3=N(p.tf3),t4=N(p.tf4),t5=N(p.tf5),r=[["Interest → talked or tried it",pc(t2,t1)],["Talked or tried → paid",pc(t3,t2)],["Still active after 3 months",pc(t5,t4)]].filter(x=>x[1]!=null);
+    set("b4-calc",r.length?r.map(x=>x[0]+": "+x[1]+"%").join(" · ")+(r.length>1?" · Biggest leak: "+r.slice().sort((a,b)=>a[1]-b[1])[0][0]+".":""):"Fill in the counts to see where you lose people.");
+    const tg=N(p.m_target)||100,conv=N(p.m_conv),wk=N(p.m_weeks),cac=N(p.m_cac),cur=t1>0?t1/4.3:null;
+    if(!(conv>0))set("m-calc","Enter a conversion rate to see the math.");
+    else{const need=tg*100/conv,pw=wk>0?need/wk:null;
+      set("m-calc","For "+nf(tg)+" new customers you need "+nf(need)+" enquiries"+(pw?", about "+nf(Math.ceil(pw))+" a week":"")+"."+(pw&&cur?" Today you get about "+nf(cur)+" a week, so that is "+(pw/cur).toFixed(1)+"x more. "+(pw/cur>3?"More than 3x is usually a new-channel problem, not just doing the current one better.":"Within reach by improving what you already do."):"")+(cac>0?" Budget at your cost per customer: ₹"+nf(tg*cac)+".":""));}
+  }else{
+    const e1=N(p.ev1),e3=N(p.ev3),e4=N(p.ev4);
+    set("b4-calc",e1>0?(e3!=null?e3+" of "+e1+" said they would pay ("+pc(e3,e1)+"%). ":"")+(e4!=null?e4+" committed. ":"")+"Compliments are not commitments: the next step is the ask.":"Fill in the counts to see where you stand.");
+    const cap=N(p.m_cap),bar=N(p.m_bar);
+    if(!(cap>0&&bar>=0&&p.m_bar))set("m-calc","Enter both numbers to see the math.");
+    else{const asks=cap*2,rate=bar*100/asks;
+      set("m-calc","In 14 days you will make about "+nf(asks)+" asks. To reach "+nf(bar)+" commitments, "+Math.round(rate)+"% of the people you ask must commit."+(e1>0&&e4!=null?" So far "+e4+" of "+e1+" have committed.":"")+(rate>0?" At that rate, 100 customers needs about "+nf(10000/rate)+" conversations.":""));}
+  }
+}
+/* ---- My scores: its own tab, nothing shows until the organizers release at the end of the day ---- */
+let scoresStarted=false;
+async function loadScores(){
+  if(!scoresStarted){scoresStarted=true;subResults();try{const s=await db.doc("cards/"+uid).get();if(s.exists){cards=Object.assign({},s.data(),cards);syncStartup();}}catch(e){}}
+  renderScores();
+}
+function renderScores(){
+  const el=$("scores-body");if(!el||$("view-scores").hidden||el.contains(document.activeElement))return;
+  if(!myManifest){el.innerHTML='<div class="notice">Your founder profile was not found. Register in the portal first.</div>';return;}
+  const R=(myResults&&myResults.rounds)||{},id=rid(myManifest.rosterId,"gtm"),b=R[id],rm=R[id+"__room"];
+  if(!b&&!rm){el.innerHTML='<div class="notice">Your scores appear here at the end of the day, after the reveal.</div>';return;}
+  const val=(o,k)=>o&&o[k]!=null?(k==="overall"?o[k]*5:o[k]):null,notes=cards.scoreNotes||{};
+  const dl=(a,z)=>a!=null&&z!=null?((z-a>=0?"+":"")+(z-a).toFixed(1)):"–";
+  const rows=GCRIT.map(c=>[c[0],c[1]]).concat([["overall","Total (out of 25)"]]);
+  el.innerHTML='<section class="block"><h2>My scores</h2><p class="sub">GTM, scored on the same five questions each time. Only you can see this.</p><div class="tablebox"><table><thead><tr><th>Criterion</th><th>Before (room)</th><th>After (room)</th><th>Change</th><th>What I changed to move it</th></tr></thead><tbody>'+
+    rows.map(r=>{const k=r[0],l=r[1],bb=val(b,k),rr=val(rm,k),last=rr;
+      return `<tr><td>${k==="overall"?"<b>"+l+"</b>":l}</td><td class="n">${f1(bb)}</td><td class="n">${f1(rr)}</td><td class="n">${dl(bb,last)}</td><td>${k==="overall"?"":`<input type="text" data-sn="${k}" aria-label="What I changed for ${l}" style="min-width:180px" value="${esc(notes[k]||"")}">`}</td></tr>`;}).join("")+
+    '</tbody></table></div><div class="status" id="sn-status" role="status"></div></section>'+resultsHtml();
+}
+$("view-scores").addEventListener("change",async e=>{
+  const i=e.target.closest("[data-sn]");if(!i||!uid)return;
+  const before=cards;cards=Object.assign({},cards,{scoreNotes:Object.assign({},cards.scoreNotes,{[i.dataset.sn]:i.value.trim()})});
+  try{await db.doc("cards/"+uid).set(cards);setStatus($("sn-status"),"Saved.","ok");}catch(err){cards=before;setStatus($("sn-status"),"Could not save.","err");}
+});
+const secState={};
+function secCounts(root){(root||document).querySelectorAll("details.sec").forEach(d=>{const f=[...d.querySelectorAll("[data-f]")],c=d.querySelector(".cnt");if(!c)return;if(!f.length){c.textContent="";return;}c.textContent=f.filter(e=>(e.value||"").trim()).length+" of "+f.length+" filled";});}
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.matches&&d.matches("details.sec"))secState[d.dataset.sec]=d.open;},true);
+document.addEventListener("click",e=>{const b=e.target.closest("[data-secall]");if(!b)return;const root=b.closest("#work-sheet,#gs-sheet,#peek")||document;root.querySelectorAll("details.sec").forEach(d=>{d.open=b.dataset.secall==="open";secState[d.dataset.sec]=d.open;});});
+function gtmSheet(p,members,ro,draft){
+  const F=(k,l,t,o)=>fx([k,l,t||"ta",null,o],"","data-f");
+  const sec=(h,s,body)=>`<details class="block sec" data-sec="${esc(h)}"${(secState[h]===undefined?!/^Worksheet A/.test(h):secState[h])?" open":""} style="margin-bottom:16px"><summary><h3>${h}</h3><span class="status cnt"></span></summary>${s?`<p class="sub">${s}</p>`:""}${body}</details>`;
+  const aCard=CARD.gtm.filter(c=>(p.card||{})[c[0]]).map(c=>`<div><div class="status">${esc(c[1])}</div><div>${esc(p.card[c[0]])}</div></div>`).join("")||'<div class="status">No worksheet A yet.</div>';
+  const T=gT(p),ac=p.card||{};
+  const cin=(k,l,w)=>`<input type="text" data-f="${k}" aria-label="${l}" style="min-width:${w||120}px">`;
+  const csel=(k,l,o)=>`<select data-f="${k}" aria-label="${l}"><option value=""></option>${o.map(x=>`<option>${x}</option>`).join("")}</select>`;
+  const tbl=(th,rows)=>`<div class="tablebox"><table><thead><tr>${th.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  const aSrc=(ac.a_last10||"").trim()?`<div class="notice">Your sources, from worksheet A: ${esc(String(ac.a_last10).trim().split(/\n+/).join(" · "))}</div>`:"";
+  const b3=T
+    ?tbl(["Channel","Share of my customers (%)","Cost per customer (₹)","Could it take 5x more?","My call"],[1,2,3,4,5].map(i=>`<tr><td>${cin("ch"+i+"_n","Channel "+i,150)}</td><td class="n">${cin("ch"+i+"_1","Share "+i,60)}</td><td class="n">${cin("ch"+i+"_2","Cost "+i,80)}</td><td>${csel("ch"+i+"_3","5x "+i,["Yes","Not sure","No"])}</td><td>${csel("ch"+i+"_4","Call "+i,["Double down","Fix it","Test it","Stop"])}</td></tr>`).join(""))
+    :tbl(["Channel","Where exactly?<small> Name the group, street, list or event</small>","Can I reach 20 of them there this week?","What I will do there","Cost to try<small> ₹ and hours</small>"],[1,2,3].map(i=>`<tr><td>${cin("ch"+i+"_n","Channel "+i,140)}</td><td>${cin("ch"+i+"_1","Where "+i,170)}</td><td>${csel("ch"+i+"_2","Reach 20 "+i,["Yes","Not sure","No"])}</td><td>${cin("ch"+i+"_3","Action "+i,170)}</td><td>${cin("ch"+i+"_4","Cost "+i,90)}</td></tr>`).join(""));
+  const b4=T
+    ?tbl(["Last month","How many"],[["People who enquired or showed interest","tf1"],["Talked to me, or tried it","tf2"],["Paid","tf3"],["Customers I won 3 months ago","tf4"],["Of those, still paying or buying again","tf5"]].map(r=>`<tr><td>${r[0]}</td><td class="n">${cin(r[1],r[0],70)}</td></tr>`).join(""))+`<div class="status" id="b4-calc"></div>`+F("b_leak","Why I think people drop at the biggest leak")+F("b_motion","Who makes the sale, and how?","sel",["I sell it myself, in person or on a call","It sells itself: they sign up online","A partner introduces and sells it","A sales team sells it"])
+    :tbl(["What has happened so far","How many people"],[["People I have spoken to about the problem","ev1"],["Told me the problem is real, in their own words","ev2"],["Said they would pay, or asked when they can have it","ev3"],["Committed: paid, pre-ordered, signed or booked a pilot","ev4"]].map(r=>`<tr><td>${r[0]}</td><td class="n">${cin(r[1],r[0],70)}</td></tr>`).join(""))+`<div class="status" id="b4-calc"></div>`+F("f_drop","Where did most people stop?","sel",["Most did not see the problem as real","They saw the problem but would not pay","They would pay but did not commit","I have not spoken to enough people yet"])+F("b_ask","What will I ask them to do?","ta","The exact thing, with a number: pay ₹1,500 for a 3-month pilot, pre-order, book a demo slot. Not \"give feedback\".");
+  const b5=T
+    ?`<div class="row">${F("m_target","How many new customers I want (a number)","in")}${F("m_weeks","In how many weeks","in")}${F("m_conv","Enquiry to paid, in % (pre-filled from A)","in")}${F("m_cac","Cost to win one customer, ₹ (pre-filled from A)","in")}</div><div class="status" id="m-calc">Enter a conversion rate to see the math.</div>`
+    :`<div class="row">${F("m_cap","Conversations or asks I can realistically do per week","in")}${F("m_bar","Commitments that would make me keep going (a number)","in")}</div><div class="status" id="m-calc">Enter both numbers to see the math.</div>`;
+  const peers=members.filter(m=>m.id!==p.founderId);
+  return `${ro?"":`<div class="actions" style="margin-bottom:12px"><button class="ghost" data-back="1">Back</button><span class="status">${draft?"GTM · Worksheet B":"GTM · Group "+esc(p.n)}</span></div>`}
+  <section class="block" style="margin-bottom:16px"><h2>${esc(p.name)}</h2><div class="status">${esc(p.startup||"")}</div>
+    </section>
+  <div class="actions" style="margin-bottom:8px"><button class="ghost" data-secall="open">Expand all</button><button class="ghost" data-secall="close">Collapse all</button></div>
+  ${sec("Worksheet A: where I am today","Written by the founder the night before.",aCard)}
+  ${sec("B1. Who exactly? Your segment","Narrow: owners of 2–10 outlet cafés in pune, not F&amp;B. Mark a guess with (?).",F("b_seg",T?"The segment my best customers come from, and the one I will double down on":"The one segment I will go after first")+F("b_trigger",T?"What happened right before my best customers bought? (the trigger)":"What happens in their life or business right before they need me? (the trigger)")+F("b_pain","How painful is it, 1–5, and what is my evidence?")+F("b_who","Who uses it, who decides, who pays? Same person or different?")+F("b_gather","Where do 100 of them already gather? Groups, events, marketplaces, associations, streets"))}
+  ${sec("B2. Why would they switch? Your message","",F("b_problem","The problem, in the words a customer actually used")+F("b_alt","What they use today instead, including doing nothing")+F("b_promise","My promise: I help ___ get ___ without ___","in")+F("b_proof",T?"My proof: real results from my customers (numbers, quotes, renewals)":"My proof: a number, a testimonial, a demo, a pilot result"))}
+  ${T?sec("B3. Which channel gets my next customers?","Fill in your channels from A, and any you have not tried. A channel is where customers first hear about you. Look for one that brings customers cheaply and can take much more volume.",aSrc+b3+`<div class="status" id="b3-calc"></div>`+F("b_primary","The channel I will put the most effort into next","in")+F("b_backup","Backup channel","in")):sec("B3. Where will I find the first 20 of them?","A channel is where customers first hear about you: founder visits, WhatsApp groups, Instagram, a partner. Write up to 3, and name the exact place. A channel with no named place is not a channel yet. Test first the cheapest one marked yes.",b3+F("b_primary","The one channel I will test first","in")+F("b_backup","Backup channel","in"))}
+  ${T?sec("B4. Where do I lose people?","Use last month's real counts. If you do not track a step, estimate it and add (?). The biggest leak is the first thing to fix.",b4):sec("B4. What have I learned so far?","Count only what happened, not compliments. A commitment is money, time or a signed promise. Small numbers, or zero, are fine.",b4)}
+  ${T?sec("B5. What does growth require?","Pick how many new customers you want and by when. This shows what that needs each week, compared with what you do today.",b5):sec("B5. What do I need to see in 14 days?","Decide the bar before you start, so the result is not argued afterwards.",b5)}
+  ${sec("B6. My riskiest assumption","",F("r_assume",T?"The one thing that, if wrong, stops my growth (a channel that saturates, a cost that rises)":"The one thing that, if wrong, breaks this plan")+F("r_test","The cheapest way to test it in 14 days")+F("r_wrong","What result would prove me wrong?"))}
+  ${draft?"":sec("Worksheet C: my updated gtm v1","The plan you will run for the next 14 days.",
+    `${ro?"":`<div class="actions"><button class="ghost" data-copyb="1">Copy segment, message and channel from B</button></div>`}
+    <h3 style="font-size:15px">My gtm v1</h3>${F("v_seg","Segment, narrow enough to list 20 names")}${F("v_msg","Message: I help ___ get ___ without ___","in")}<div class="row">${F("v_primary","Primary channel","in")}${F("v_goal","Goal: customers (or paid pilots) by zebra tank","in")}</div>
+    <h3 style="font-size:15px">My 14-day experiment</h3>${F("e_what","What I will do, and how much (for example 50 dms or 20 calls)")}<div class="row">${F("e_start","Start date (within 1 week)","in")}${F("e_end","End date","in")}</div>${F("e_keep","I will keep going if…")}${F("e_change","I will change course if…")}${F("e_ask","One ask of the cohort: an intro, a skill, a feedback round")}`)}
+  ${ro?"":draft?`<div class="actions"><span class="status" id="sheet-status" role="status">Changes save when you leave a field. Worksheet C opens in your hot seat.</span></div>`:`<div class="actions"><button class="primary" data-done="1">Mark hot seat done</button><span class="status" id="sheet-status" role="status">Changes save when you leave a field and show to your group live.</span></div>`}`;
+}
+/* organizer: GTM before / after report */
+function baScores(){
+  const out=[];
+  all.forEach(m=>{if(!m.rosterId)return;
+    const g=ph=>{const r=rounds.find(x=>x.id===rid(m.rosterId,"gtm")+(ph==="before"?"":"__"+ph));if(!r)return null;const s=summ(votesFor(r),GCRIT);return s.n?s:null;};
+    out.push({id:m.rosterId,name:m.name,b:g("before"),p:g("room")});});
+  return out;
+}
+/* ---- Room summary: where the room started and where it ended, to share ---- */
+let sumScope="all",sumNames=false;
+function sumData(){
+  const sg=savedGroups.gtm,gm={};((sg&&sg.groups)||[]).forEach(g=>(g.members||[]).forEach(m=>{gm[typeof m==="string"?m:m.id]=g.n;}));
+  const inS=id=>sumScope==="all"||String(gm[id])===String(sumScope);
+  const d=baScores().filter(x=>x.id&&inS(x.id)),both=d.filter(x=>x.b&&x.p),rep=d.filter(x=>x.b&&x.r);
+  const avg=(rows,sel,k)=>mean(rows.map(x=>x[sel]&&x[sel][k]).filter(v=>v!=null)),sc=(k,v)=>v==null?null:(k==="overall"?v*5:v);
+  const keys=GCRIT.map(c=>[c[0],c[1]]).concat([["overall","Total (out of 25)"]]);
+  const rows=keys.map(([k,l])=>({k,l,b:sc(k,avg(both,"b",k)),p:sc(k,avg(both,"p",k)),b2:sc(k,avg(rep,"b",k)),r:sc(k,avg(rep,"r",k))}));
+  const crit=rows.filter(r=>r.k!=="overall"&&r.b!=null&&r.p!=null),gain=crit.slice().sort((a,b)=>(b.p-b.b)-(a.p-a.b))[0],low=crit.slice().sort((a,b)=>a.p-b.p)[0];
+  const bid=new Map(all.map(m=>[m.id,m])),cohort={yes:0,no:0};
+  exitsAll.forEach(x=>{const m=bid.get(x.id);if(!m||!m.rosterId||!inS(m.rosterId)||!(x.gtm&&x.gtm.a_path))return;if(x.gtm.a_path==="I have customers")cohort.yes++;else cohort.no++;});
+  const pl=Object.values(plans).filter(p=>p.session==="gtm"&&inS(p.founderId)),exp=pl.filter(p=>["e_what","e_start","e_end","e_keep","e_change"].every(k=>p[k])).length,seen=new Set(),ch=[];
+  pl.forEach(p=>{const c=String(p.v_primary||p.b_primary||"").trim(),k=c.toLowerCase();if(c&&!seen.has(k)){seen.add(k);ch.push(c);}});
+  const movers=d.map(x=>{const a=x.r||x.p;return x.b&&a?{n:x.name,v:(a.overall-x.b.overall)*5}:null;}).filter(Boolean).sort((a,b)=>b.v-a.v).slice(0,3);
+  return{n:d.length,both:both.length,rep:rep.length,rows,gain,low,cohort,exp,plans:pl.length,ch,movers,groups:((sg&&sg.groups)||[]).length};
+}
+const sgn=v=>v==null?"–":(v>=0?"+":"")+v.toFixed(1);
+function sumText(d){
+  const L=["Where we started and where we ended"+(sumScope==="all"?"":" · Group "+sumScope),""];
+  if(d.cohort.yes+d.cohort.no)L.push("Who: "+(d.cohort.yes+d.cohort.no)+" founders. "+d.cohort.yes+" already had customers, "+d.cohort.no+" did not.");
+  L.push("Scores, out of 5 (total out of 25), "+d.both+" founders pitched twice:");
+  d.rows.forEach(r=>L.push("- "+r.l+": "+f1(r.b)+" → "+f1(r.p)+" ("+sgn(r.b!=null&&r.p!=null?r.p-r.b:null)+")"));
+  if(d.rep)L.push("Re-pitchers to the room ("+d.rep+"): total "+f1((d.rows.find(r=>r.k==="overall")||{}).b2)+" → "+f1((d.rows.find(r=>r.k==="overall")||{}).r));
+  if(d.gain)L.push("Biggest gain: "+d.gain.l+" ("+sgn(d.gain.p-d.gain.b)+"). Next to work on: "+d.low.l+" (now "+f1(d.low.p)+").");
+  L.push("Ahead: "+d.exp+" of "+d.plans+" founders have a 14-day experiment with dates and a keep-or-change number."+(d.ch.length?" Channels being tested: "+d.ch.join("; ")+".":""));
+  if(sumNames&&d.movers.length)L.push("Biggest movers: "+d.movers.map(m=>m.n+" ("+sgn(m.v)+")").join(", ")+".");
+  return L.join("\n");
+}
+function sumHtml(d,big){
+  const st=big?' style="font-size:1em"':"";
+  return `<div class="stats" style="margin-bottom:12px"><div class="stat"><b>${d.n}</b><span>founders${sumScope==="all"?"":" in Group "+esc(sumScope)}</span></div><div class="stat"><b>${d.cohort.yes}</b><span>already had customers</span></div><div class="stat"><b>${d.cohort.no}</b><span>had none yet</span></div><div class="stat"><b>${d.exp}/${d.plans}</b><span>14-day experiments set</span></div></div>
+  <div class="tablebox"><table><thead><tr><th></th><th>Where we started</th><th>Where we ended</th><th>Change</th></tr></thead><tbody>${d.rows.map(r=>`<tr${r.k==="overall"?' style="font-weight:600"':""}><td>${esc(r.l)}</td><td class="n">${f1(r.b)}</td><td class="n">${f1(r.p)}</td><td class="n">${sgn(r.b!=null&&r.p!=null?r.p-r.b:null)}</td></tr>`).join("")}</tbody></table></div>
+  <p class="status"${st}>${d.both} founders pitched twice: in the morning and again to the room. Started is the morning pitch. Ended is the re-pitch to the room.</p>
+  ${d.rep?`<p class="status"${st}>${d.rep} re-pitched to the whole room: total ${f1((d.rows.find(r=>r.k==="overall")||{}).b2)} → ${f1((d.rows.find(r=>r.k==="overall")||{}).r)}.</p>`:""}
+  ${d.gain?`<p${st}><b>Biggest gain:</b> ${esc(d.gain.l)} (${sgn(d.gain.p-d.gain.b)}). <b>Next to work on:</b> ${esc(d.low.l)}, now ${f1(d.low.p)}.</p>`:'<p class="status">No before and after scores yet.</p>'}
+  ${d.ch.length?`<p${st}><b>Channels the room will test:</b> ${d.ch.map(esc).join(" · ")}</p>`:""}
+  ${sumNames&&d.movers.length?`<p${st}><b>Biggest movers:</b> ${d.movers.map(m=>esc(m.n)+" ("+sgn(m.v)+")").join(", ")}</p>`:""}`;
+}
+function renderSum(){
+  const el=$("sum-body");if(!el||$("p-sum").hidden)return;
+  if(el.querySelector("select:focus"))return;
+  const d=sumData();
+  el.innerHTML=`<section class="block" style="margin-bottom:16px"><h3>Where we started and where we ended</h3><p class="sub">Averages only, with no ranking of founders. Show it to the room, or copy the text.</p>
+  <div class="actions"><label class="status" for="sum-scope">Show <select id="sum-scope"><option value="all">Whole room</option>${Array.from({length:d.groups},(_,i)=>`<option value="${i+1}"${String(sumScope)===String(i+1)?" selected":""}>Group ${i+1}</option>`).join("")}</select></label>
+  <label class="status"><input type="checkbox" id="sum-names"${sumNames?" checked":""}> Name the biggest movers</label>
+  <button class="primary" data-sum="show">Show full screen</button><button class="ghost" data-sum="copy">Copy text</button><span class="status" id="sum-status" role="status"></span></div></section>
+  <section class="block">${sumHtml(d,false)}</section>`;
+  const sel=$("sum-scope");if(sel)sel.value=sumScope;
+}
+$("sum-body").addEventListener("change",e=>{
+  if(e.target.id==="sum-scope"){sumScope=e.target.value;renderSum();}
+  if(e.target.id==="sum-names"){sumNames=e.target.checked;renderSum();}
+});
+$("sum-body").addEventListener("click",e=>{
+  const b=e.target.closest("[data-sum]");if(!b)return;const d=sumData();
+  if(b.dataset.sum==="copy"){try{navigator.clipboard.writeText(sumText(d));setStatus($("sum-status"),"Copied.","ok");}catch(err){setStatus($("sum-status"),"Could not copy.","err");}return;}
+  let o=$("sum-full");if(!o){o=document.createElement("div");o.id="sum-full";o.setAttribute("role","dialog");o.setAttribute("aria-label","Room summary");o.style.cssText="position:fixed;inset:0;z-index:99;overflow:auto;background:var(--bg,#fff);color:var(--fg,#111);padding:32px 6vw;font-size:clamp(18px,2.4vw,30px);line-height:1.4";document.body.appendChild(o);}
+  o.innerHTML=`<button class="ghost" data-x="1" style="position:fixed;top:12px;right:12px">Close</button><h2 style="font-size:1.4em;margin:0 0 .6em">Where we started and where we ended${sumScope==="all"?"":" · Group "+esc(sumScope)}</h2>`+sumHtml(d,true);
+  o.hidden=false;o.onclick=ev=>{if(ev.target.closest("[data-x]"))o.hidden=true;};
+});
+document.addEventListener("keydown",e=>{const o=$("sum-full");if(e.key==="Escape"&&o&&!o.hidden)o.hidden=true;});
+function renderBA(){
+  renderSum();
+  const el=$("ba-crit");if(!el)return;
+  const d=baScores(),both=d.filter(x=>x.b&&x.p),rep=d.filter(x=>x.b&&x.r);
+  const avg=(rows,sel,k)=>mean(rows.map(x=>x[sel]&&x[sel][k]).filter(v=>v!=null));
+  const dl=(a,b)=>a==null||b==null?"–":((b-a>=0?"+":"")+(b-a).toFixed(1));
+  const keys=GCRIT.map(c=>[c[0],c[1]]).concat([["overall","Total (out of 25)"]]);
+  const sc=(k,v)=>v==null?null:(k==="overall"?v*5:v);
+  el.innerHTML=keys.map(([k,l])=>{const b1=sc(k,avg(both,"b",k)),p1=sc(k,avg(both,"p",k));
+    return `<tr><td>${esc(l)}</td><td class="n">${f1(b1)}</td><td class="n">${f1(p1)}</td><td class="n">${dl(b1,p1)}</td></tr>`;}).join("");
+  $("ba-note").textContent=both.length+" founders have a before score and a room-after score (the ones who re-pitched to the room).";
+  const moves=GCRIT.map(c=>({l:c[1],v:avg(both,"p",c[0])!=null&&avg(both,"b",c[0])!=null?avg(both,"p",c[0])-avg(both,"b",c[0]):null})).filter(x=>x.v!=null).sort((a,b)=>b.v-a.v);
+  const jumps=d.map(x=>{const a=x.r||x.p;return x.b&&a?{n:x.name,v:(a.overall-x.b.overall)*5}:null;}).filter(Boolean).sort((a,b)=>b.v-a.v).slice(0,3);
+  $("ba-top").innerHTML=moves.length?`<div class="status">Moved most: <b>${esc(moves[0].l)}</b> (${moves[0].v>=0?"+":""}${moves[0].v.toFixed(1)}). Moved least: <b>${esc(moves[moves.length-1].l)}</b> (${moves[moves.length-1].v>=0?"+":""}${moves[moves.length-1].v.toFixed(1)}). The one that moved least tells you what weeks 4–5 should cover.</div>
+    <div class="status">Biggest jumps: ${jumps.map(j=>esc(j.n)+" ("+(j.v>=0?"+":"")+j.v.toFixed(1)+")").join(", ")||"–"}</div>`:'<div class="status">No before and after scores yet. Open rounds with the Before and Room after phases on the Pitch rounds tab.</div>';
+  $("ba-list").innerHTML=d.filter(x=>x.b||x.p||x.r).map(x=>{const t=o=>o?o.overall*5:null,a=x.r||x.p;
+    return `<tr><td>${esc(x.name)}</td><td class="n">${f1(t(x.b))}</td><td class="n">${f1(t(x.p))}</td><td class="n">${x.b&&x.p?dl(t(x.b),t(x.p)):"–"}</td></tr>`;}).join("")||'<tr><td colspan="4" class="status">No scores yet.</td></tr>';
+}
+
+/* ---- exit card (end of session): stored in cards/{uid}.exit.{gtm|ai} ---- */
+let exitSession="gtm",exitsAll=[];
+const EXIT_LBL={goal:"90-day goal",act1:"action 1",act2:"action 2",act3:"action 3",weekly:"weekly number",conf:"confidence"};
+const EXIT_REQ=Object.keys(EXIT_LBL);
+function exitDefaults(s){
+  const p=myManifest?plans[planId(s,myManifest.rosterId)]:null;if(!p)return {};
+  const o={};["goal","act1","act2","act3","weekly","risk","help"].forEach(k=>{o[k]=p[k]||"";});return o;
+}
+function renderExit(){
+  const el=$("exit-form");if(!el||el.contains(document.activeElement))return;
+  if(!myManifest){el.innerHTML='<div class="notice">Your founder profile was not found. Register in the portal first.</div>';return;}
+  const s=exitSession,saved=(cards.exit||{})[s],v=saved||exitDefaults(s),pre=!saved&&Object.values(v).some(x=>x);
+  const hint=h=>h?`<span class="hint">${h}</span>`:"";
+  const inp=(k,l,h)=>`<label class="f">${l}${hint(h)}<input type="text" data-x="${k}" value="${esc(v[k]||"")}"></label>`;
+  const ta=(k,l,h)=>`<label class="f">${l}${hint(h)}<textarea data-x="${k}" style="min-height:64px">${esc(v[k]||"")}</textarea></label>`;
+  const when=saved&&saved.at?new Date(saved.at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"";
+  el.innerHTML=(saved?`<p class="status ok">Submitted at ${esc(when)}. Edit and submit again to update.</p>`:(pre?'<p class="status">Pre-filled from your hot-seat plan. Check it, then submit.</p>':""))
+   +ta("goal","My 90-day goal","One number and a date")
+   +inp("act1","Action 1: starts tomorrow","What, who, and when")+inp("act2","Action 2")+inp("act3","Action 3")
+   +inp("weekly","The one number I check every Friday")
+   +inp("drop","One thing I am dropping","A bet, channel or habit I will stop")
+   +ta("risk","Biggest risk, and my fallback")
+   +ta("help","Help I need","A peer, a mentor or a resource, by name where possible")
+   +`<div class="f"><span style="font-weight:500">How likely am I to do action 1 this week? <span class="hint">1 unlikely, 5 certain</span></span><div class="chips">${[1,2,3,4,5].map(n=>`<label class="chip"><input type="radio" name="exit_conf" value="${n}"${v.conf===n?" checked":""}><span>${n}</span></label>`).join("")}</div></div>`
+   +ta("fb_good","One thing that worked today")+ta("fb_bad","One thing to change next time")
+   +'<div class="actions"><button class="primary" data-saveexit="1">'+(saved?"Update exit card":"Submit exit card")+'</button><span class="status" id="exit-status" role="status"></span></div>';
+}
+async function saveExit(e){
+  if(!e.target.closest("[data-saveexit]"))return;
+  const st=$("exit-status"),s=exitSession,v={};
+  $("exit-form").querySelectorAll("[data-x]").forEach(el=>{v[el.dataset.x]=el.value.trim();});
+  const c=$("exit-form").querySelector("input[name=exit_conf]:checked");v.conf=c?+c.value:0;
+  const miss=EXIT_REQ.filter(k=>!v[k]);
+  if(miss.length){setStatus(st,"Still needed: "+miss.map(k=>EXIT_LBL[k]).join(", ")+".","err");return;}
+  if(!/\d/.test(v.goal)){setStatus(st,"Make the goal a number with a date.","err");return;}
+  v.at=Date.now();
+  const before=cards;cards=Object.assign({},cards,{exit:Object.assign({},cards.exit,{[s]:v})});
+  try{await db.doc("cards/"+uid).set(cards);setStatus(st,"Submitted. You can edit and submit again.","ok");e.target.closest("[data-saveexit]").textContent="Update exit card";}
+  catch(err){cards=before;setStatus(st,"Could not save. Check your connection.","err");}
+}
+/* organizer: exit cards */
+function exitRows(s){
+  const out=[];
+  exitsAll.forEach(d=>{const x=(d.exit||{})[s];if(!x)return;const m=all.find(a=>a.id===d.id)||{};out.push({rosterId:m.rosterId,name:m.name||d.id,startup:m.startup||"",x});});
+  return out.sort((a,b)=>(b.x.at||0)-(a.x.at||0));
+}
+function renderExits(){
+  const el=$("exit-list");if(!el)return;
+  const s=$("x-session").value,rows=exitRows(s),conf=rows.map(r=>+r.x.conf).filter(Boolean),low=conf.filter(n=>n<=2).length;
+  $("exit-stats").innerHTML=`<div class="stat"><b>${rows.length}</b><span>submitted of ${roster.length}</span></div><div class="stat"><b>${f1(mean(conf))}</b><span>avg confidence in action 1</span></div><div class="stat"><b>${low}</b><span>at 1 or 2, follow up first</span></div>`;
+  const done=new Set(rows.map(r=>r.rosterId)),pend=roster.filter(r=>!done.has(r.id));
+  $("x-pending").textContent=pend.length&&roster.length?"Not yet submitted: "+pend.map(r=>r.name).join(", "):(roster.length?"Everyone has submitted.":"");
+  el.innerHTML=rows.length?rows.map(r=>{const x=r.x;
+    return `<tr><td>${esc(r.name)}<div class="status">${esc(r.startup)}</div></td><td><div style="max-width:220px">${esc(x.goal)}</div></td>
+    <td><div style="max-width:260px">1. ${esc(x.act1)}<br>2. ${esc(x.act2)}<br>3. ${esc(x.act3)}</div></td><td>${esc(x.weekly)}</td><td>${esc(x.drop||"–")}</td>
+    <td><div style="max-width:220px">${esc(x.risk||"–")}</div></td><td><div style="max-width:220px">${esc(x.help||"–")}</div></td>
+    <td class="n"><span class="${x.conf<=2?"gap":""}">${esc(x.conf)}</span></td><td><div style="max-width:220px">${x.fb_good?"+ "+esc(x.fb_good):""}${x.fb_bad?"<br>– "+esc(x.fb_bad):""}</div></td></tr>`;}).join("")
+    :'<tr><td colspan="9" class="status">No exit cards yet.</td></tr>';
+}
+$("x-session").addEventListener("change",renderExits);
+$("x-csv").addEventListener("click",async()=>{
+  const dl=await claude.use("downloads");if(!dl){setStatus($("x-status"),"Download is not available in this view.","err");return;}
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const cols=["goal","act1","act2","act3","weekly","drop","risk","help","conf","fb_good","fb_bad"];
+  const lines=[["name","startup","session"].concat(cols).join(",")];
+  ["gtm","ai"].forEach(s=>exitRows(s).forEach(r=>lines.push([r.name,r.startup,SES[s]].concat(cols.map(c=>r.x[c])).map(q).join(","))));
+  try{await dl.save({filename:"exit-cards.csv",data:lines.join("\n")});}catch(e){setStatus($("x-status"),"Download cancelled.","err");}
+});
+
+/* organizer: plans overview and facilitator checks */
+function renderPlans(){
+  renderRun();
+  const el=$("plans-list");if(!el)return;
+  if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#plans-list"))return;
+  const rows=Object.entries(plans).sort((a,b)=>(b[1].startedAt||0)-(a[1].startedAt||0));
+  el.innerHTML=rows.length?rows.map(([id,p])=>{const rq=reqOf(p.session,p),filled=rq.filter(k=>p[k]).length,ck=planChecks[id]||{};
+    return `<tr><td>${esc(p.name)}<div class="status">${esc(p.startup||"")}</div>${p.session==="gtm"?`<span class="tag">${gT(p)?"Has customers":"No customers yet"}</span>`:""}</td><td>${esc(SES[p.session]||"")}</td><td class="n">${esc(p.n)}</td><td><span class="tag">${esc(p.status)}</span></td><td class="n">${filled}/${rq.length}</td>
+    <td><div style="max-width:260px">${esc(p.goal||p.v_goal||p.b_seg||"–")}</div>${p.session==="gtm"?`<details><summary>Worksheet A</summary>${CARD.gtm.filter(c=>(p.card||{})[c[0]]).map(c=>`<div class="status"><b>${esc(c[1])}</b>: ${esc(p.card[c[0]])}</div>`).join("")||'<div class="status">Nothing filled in.</div>'}</details>`:""}<details><summary>Full plan</summary>${planKeysOf(p.session).filter(k=>p[k]).map(k=>`<div class="status"><b>${esc(k)}</b>: ${esc(p[k])}</div>`).join("")}</details></td>
+    <td>${checksOf(p.session).map(c=>`<label style="display:flex;gap:6px;align-items:flex-start;font-size:13px"><input type="checkbox" data-pc="${esc(id)}" data-k="${c[0]}"${ck[c[0]]?" checked":""}><span>${esc(c[1])}</span></label>`).join("")}</td></tr>`;}).join("")
+    :'<tr><td colspan="7" class="status">No hot seats started yet.</td></tr>';
+}
+$("plans-list").addEventListener("change",async e=>{
+  const c=e.target.closest("input[data-pc]");if(!c)return;
+  const id=c.dataset.pc,k=c.dataset.k;planChecks[id]=Object.assign({},planChecks[id],{[k]:c.checked});
+  try{await db.doc("planChecks/"+id).set(planChecks[id]);setStatus($("pl-status"),"Saved.","ok");}catch(err){setStatus($("pl-status"),"Could not save.","err");}
+});
+$("pl-csv").addEventListener("click",async()=>{
+  const dl=await claude.use("downloads");if(!dl){setStatus($("pl-status"),"Download is not available in this view.","err");return;}
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const cols=["name","startup","session","cohort","n","status"].concat(PLAN_KEYS,GKEYS);
+  const lines=[cols.concat(["check_goal","check_first_action","check_one_person","check_help"]).join(",")].concat(Object.entries(plans).map(([id,p0])=>{const p=Object.assign({cohort:p0.session==="gtm"?(gT(p0)?"has customers":"no customers yet"):""},p0),ck=planChecks[id]||{};return cols.map(c=>q(p[c])).concat(["c1","c2","c3","c4"].map(k=>q(ck[k]?"yes":""))).join(",");}));
+  try{await dl.save({filename:"hot-seat-plans.csv",data:lines.join("\n")});}catch(e){setStatus($("pl-status"),"Download cancelled.","err");}
+});
+/* ---- Run sheet: what the facilitators do, stage by stage ---- */
+const RUN_Q=[["B1 Segment","Could you name 20 of these people today? Who are the first three?","What happens right before they need you? When did it last happen to someone you know?","Who uses it, who decides, who pays? Is that the same person?"],
+  ["B2 Message","What do they use today instead, including doing nothing?","What words did a customer actually use for the problem?","What proof do you have that is not from a friend?"],
+  ["B3 Channel, no customers","Which named place can you reach 20 of them this week?","What is the cheapest way to find out in 7 days?","Why would they answer a stranger?"],
+  ["B3 Channel, has customers","Which channel could take 5x more, and what breaks first?","How much depends on one source?","What is the cost per customer in each channel?"],
+  ["B4 Evidence, no customers","Who has been asked for money, and what did they say?","Is that a compliment or a commitment?","What would they do if you asked for the money tomorrow?"],
+  ["B4 Funnel, has customers","Where is the biggest leak? What do the people who left say?","How do you know that is the reason?","Which is the bigger problem: winning customers or keeping them?"],
+  ["B5 14-day bar, no customers","Is that bar high or low? What would change your mind?","How many asks can you really make in a week?","What does keep going look like on day 15?"],
+  ["B5 Growth, has customers","What gives you today's enquiries, and what would give 10x?","Will conversion hold at 10x volume?","What happens to cost per customer at 10x?"],
+  ["B6 Riskiest assumption","What is the cheapest test in 14 days?","What result proves you wrong?","Who will check on day 7?"]];
+const RUN=[
+ {t:"Night before",w:"Thursday night",do:["Send the founders the link. Worksheet A takes about 10 minutes.","Check how many have saved their card (see above), and chase the rest."],app:"Nothing to press. Founders open Worksheets, fill A and Save card.",say:"Fill A tonight. It becomes your 2-minute pitch tomorrow. If you have no customers yet, answer the first-100 questions instead.",watch:"A founder who skips the customers question gets no pitch. Cards saved should reach the number of founders."},
+ {t:"Part 1: before pitches",w:"11:40 to 1:15",do:["Each founder pitches for 2 minutes, reading from their pitch screen.","Everyone else scores 5 questions on their phone, about 40 seconds.","Facilitators score too, from Rate pitches."],app:"Pitch rounds, Who is next: phase Before. Press Open round beside the founder going next. After the pitch and the scoring minute, press Close round.",say:"Two minutes, read it as it is. Score on your phone: tap a number for each question.",watch:"Founders cannot rate themselves. Scores stay hidden until the end of the day."},
+ {t:"Groups, before lunch",w:"By 1:15",do:["Generate groups of 5, shuffle if needed, Save, then Publish to founders.","Check that every pod has a sherpa."],app:"Groups: session GTM, size 5, Generate groups, Save, Publish to founders.",say:"Your pod is on the Worksheets tab. Fill B alone now.",watch:"Until groups are published, founders cannot start their hot seat."},
+ {t:"Lunch, solo",w:"1:25 to 3:15",do:["Founders fill worksheet B alone, about 30 minutes.","Walk around. Help anyone stuck on B3 or B4."],app:"Nothing to press. Founders press Start my hot seat when they are ready to fill B. The sheet changes by answer to Do I have customers in A.",say:"A guess is fine, mark it (?). The pod works on the guesses. If you have no customers, B4 is what you have learned so far, and zero is a fine answer.",watch:"Founders stuck on B4 with no customers: ask them to count conversations, not opinions."},
+ {t:"Hot seats",w:"3:15 to 5:20, 22 minutes each",do:["One hot seat at a time in each pod. The sherpa runs the clock on one screen.","Present 4 min, Questions only 8, Suggestions 6, Decide 4.","Present sections 1, 3 and 5 of B for founders with customers, 1, 3 and 4 for those without."],app:"Nothing to press. Open Group status, choose your group and watch each founder. Health of all groups shows which groups are behind. Tick the four checks in Hot-seat plans.",say:"Questions only: no advice yet. Everyone asks at least 2. Suggestions: one each, starting if I were you, I would.",watch:"Advice during the questions step. Use the question bank below. Tick the four checks in Hot-seat plans as each founder finishes."},
+ {t:"Worksheet C",w:"5:20 to 5:40",do:["Each founder fills C: their updated gtm v1 and the 14-day experiment.","Check the start date is within a week and the experiment has a keep or change number."],app:"Nothing to press. Hot-seat plans shows the fields as they are saved.",say:"Copy from B with one click, then make it specific: what you will do, how much, by when, and what decides keep or change.",watch:"Experiments with no number. Tick check 3 only when there is one."},
+ {t:"Part 3: re-pitches",w:"6:05 to 7:15",do:["The chosen founders re-pitch to the whole room. The room scores.","Use the before and after tab on the main screen."],app:"Pitch rounds, Who is next: phase Room after. Open round beside each re-pitcher in turn, then Close round.",say:"Same five questions as this morning.",watch:"Only re-pitchers get a room-after score."},
+ {t:"End of day",w:"After the reveal",do:["Close every open round.","Release all scores, then put GTM before / after on screen.","Download Hot-seat plans and Worksheet A for the record."],app:"Pitch rounds: Release all scores (end of day). Room summary: choose Whole room or your group, press Show full screen to share where the room started and ended, or Copy text.",say:"Your scores are now in your My scores tab. Write one line on what you changed.",watch:"Release only after every round is closed. Founders without a manifest are skipped."}];
+function runStatus(){
+  const g=Object.values(plans).filter(p=>p.session==="gtm"),gr=rounds.filter(r=>r.session==="gtm"),ph=x=>(r=>(r.phase||"before")===x),cl=r=>r.status!=="open";
+  const saved=exitsAll.filter(d=>d.gtm&&d.gtm.a_path).length,tot=all.length,has=exitsAll.filter(d=>d.gtm&&d.gtm.a_path==="I have customers").length;
+  const rr=x=>{const a=gr.filter(ph(x));return a.filter(cl).length+" closed of "+a.length+" opened";};
+  const rel=gr.filter(r=>r.released).length;
+  return `<div class="stats"><div class="stat"><b>${saved}/${tot}</b><span>worksheet A saved (${has} with customers)</span></div><div class="stat"><b>${savedGroups.gtm?"Yes":"No"}</b><span>GTM groups saved</span></div><div class="stat"><b>${g.filter(p=>p.status==="done").length}/${g.length}</b><span>hot seats done, of started</span></div><div class="stat"><b>${rel}</b><span>GTM rounds released</span></div></div>
+  <p class="status">Pitch rounds. Before: ${rr("before")} · Room after: ${rr("room")}</p>`;
+}
+/* ---- Group status: a facilitator picks their group; everyone can see the health of all groups ---- */
+let gfac={},gsSel="",gsView="my",gsOpen="";
+try{gsSel=localStorage.getItem("gs_group")||"";gsView=localStorage.getItem("gs_view")||"my";}catch(e){}
+function gsData(){
+  const sg=savedGroups.gtm,bid=new Map(all.map(m=>[m.id,m])),aCard={};
+  exitsAll.forEach(d=>{const m=bid.get(d.id);if(m&&m.rosterId&&d.gtm&&d.gtm.a_path)aCard[m.rosterId]=d.gtm;});
+  const rm=new Map(roster.map(r=>[r.id,r])),now=Date.now();
+  return((sg&&sg.groups)||[]).map(g=>{
+    const ms=(g.members||[]).map(m=>typeof m==="string"?m:m.id).map(id=>{
+      const r=rm.get(id)||{id,name:id,program:""},a=aCard[id],pl=plans[planId("gtm",id)],fake={card:a||(pl&&pl.card)||{}},rq=reqOf("gtm",fake),filled=pl?rq.filter(k=>pl[k]).length:0,
+        cDone=!!pl&&["e_what","e_start","e_end","e_keep","e_change"].every(k=>pl[k]),ck=planChecks[planId("gtm",id)]||{},checks=["c1","c2","c3","c4"].filter(k=>ck[k]).length,
+        st=!pl?"Not started":pl.status==="done"?"Done":"Live",mins=pl&&pl.status!=="done"&&pl.startedAt?Math.round((now-pl.startedAt)/60000):null,
+        bReady=!!pl&&filled/rq.length>=0.8,ms=[!!a,bReady,cDone,st==="Done"].filter(Boolean).length;
+      return{id,r,hasA:!!a,cohort:gT(fake)?"Has customers":a?"No customers yet":"",st,mins,filled,total:rq.length,cDone,checks,prog:ms/4};});
+    const n=ms.length||1,c=f=>ms.filter(f).length;
+    return{n:g.n,ms,fac:gfac[g.n]||"",a:c(x=>x.hasA),done:c(x=>x.st==="Done"),cDone:c(x=>x.cDone),live:ms.filter(x=>x.st==="Live"),notStarted:c(x=>x.st==="Not started"),prog:ms.reduce((a,b)=>a+b.prog,0)/n};
+  });
+}
+function gsSheet(fid){
+  const pl=plans[planId("gtm",fid)],bid=new Map(all.map(m=>[m.id,m])),rm=roster.find(r=>r.id===fid)||{name:fid},d=exitsAll.find(x=>(bid.get(x.id)||{}).rosterId===fid),m=all.find(x=>x.rosterId===fid)||{};
+  const p=pl||{session:"gtm",founderId:fid,name:rm.name,startup:m.startup,n:gsSel,card:(d&&d.gtm)||{}};
+  return{html:gtmSheet(p,[],true),p,started:!!pl};
+}
+function fillRO(root,p){root.querySelectorAll("[data-f]").forEach(el=>{el.value=p[el.dataset.f]||"";el.disabled=true;});gcalc(p,root);secCounts(root);}
+function gsHealth(G){const sorted=G.map(g=>g.prog).sort((a,b)=>a-b),med=sorted.length?sorted[Math.floor(sorted.length/2)]:0;return G.map(g=>g.prog<=med-0.25?"Behind the others":"On pace");}
+function renderGS(){
+  const el=$("gs-body");if(!el||$("p-gs").hidden)return;
+  if(el.querySelector("input:focus"))return;if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#gs-sheet"))return;
+  if(gsOpen){const v=gsSheet(gsOpen);el.innerHTML=`<div class="actions" style="margin-bottom:12px"><button class="ghost" data-gback="1">Back to Group ${esc(gsSel)}</button><span class="status">Read only. It updates as the founder types.${v.started?"":" This founder has not started worksheet B."}</span></div><div id="gs-sheet">${v.html}</div>`;fillRO($("gs-sheet"),v.p);return;}
+  const G=gsData();
+  if(!G.length){el.innerHTML='<div class="notice">No GTM groups are saved yet. Build and save them on the Groups tab, after the before pitches are scored.</div>';return;}
+  if(!G.some(g=>String(g.n)===String(gsSel)))gsSel=String(G[0].n);
+  const H=gsHealth(G),pct=x=>Math.round(x*100)+"%";
+  const tabs=`<div class="tabs" style="margin-bottom:12px;width:fit-content"><button data-gv="my" aria-selected="${gsView==="my"}">My group</button><button data-gv="all" aria-selected="${gsView==="all"}">Health of all groups</button></div>`;
+  let body="";
+  if(gsView==="all"){
+    body=`<p class="status">Progress counts four steps for each founder: worksheet A saved, worksheet B mostly filled, worksheet C complete, hot seat done. A group is flagged when its progress is 25 points or more below the middle group.</p>
+    <div class="tablebox"><table><thead><tr><th>Group</th><th>Facilitator</th><th>A saved</th><th>Hot seats done</th><th>C complete</th><th>Not started</th><th>Progress</th><th>Health</th><th></th></tr></thead><tbody>${G.map((g,i)=>`<tr><td>Group ${esc(g.n)}</td><td>${esc(g.fac||"–")}</td><td class="n">${g.a}/${g.ms.length}</td><td class="n">${g.done}/${g.ms.length}</td><td class="n">${g.cDone}/${g.ms.length}</td><td class="n">${g.notStarted}</td><td class="n">${pct(g.prog)}</td><td><span class="tag" style="${H[i]!=="On pace"?"background:var(--err,#b8512b)":""}">${H[i]}</span></td><td><button class="ghost" data-gopen="${esc(g.n)}">Open</button></td></tr>`).join("")}</tbody></table></div>`;
+  }else{
+    const g=G.find(x=>String(x.n)===String(gsSel)),i=G.indexOf(g);
+    body=`<div class="actions"><label class="status" for="gs-pick">My group <select id="gs-pick">${G.map(x=>`<option value="${esc(x.n)}"${x===g?" selected":""}>Group ${esc(x.n)}</option>`).join("")}</select></label>
+      <label class="status" for="gs-fac">Facilitator <input type="text" id="gs-fac" value="${esc(g.fac)}" placeholder="Name" style="width:160px;display:inline-block"></label><span class="status" id="gs-status" role="status"></span></div>
+    <div class="stats" style="margin:12px 0"><div class="stat"><b>${g.a}/${g.ms.length}</b><span>worksheet A saved</span></div><div class="stat"><b>${g.done}/${g.ms.length}</b><span>hot seats done</span></div><div class="stat"><b>${g.cDone}/${g.ms.length}</b><span>worksheet C complete</span></div><div class="stat"><b>${pct(g.prog)}</b><span>progress · ${H[i]}</span></div></div>
+    <p class="status">${g.live.length?"In progress: "+g.live.map(x=>esc(x.r.name)).join(", ")+".":"Nobody has an open hot seat sheet right now."}</p>
+    <div class="tablebox"><table><thead><tr><th>Founder</th><th>Cohort</th><th>A</th><th>Hot seat</th><th>Required fields</th><th>C</th><th>Checks</th></tr></thead><tbody>${g.ms.map(x=>`<tr><td><button class="ghost" data-gview="${esc(x.id)}">${esc(x.r.name)}</button><div class="status">${esc(x.r.program||"")}</div></td><td>${esc(x.cohort||"–")}</td><td class="n">${x.hasA?"✓":"–"}</td><td><span class="tag">${x.st}</span>${x.mins!=null&&x.st==="Live"?`<div class="status">open for ${x.mins} min</div>`:""}</td><td class="n">${x.st==="Not started"?"–":x.filled+"/"+x.total}</td><td class="n">${x.cDone?"✓":"–"}</td><td class="n">${x.checks}/4</td></tr>`).join("")}</tbody></table></div>`;
+  }
+  el.innerHTML=tabs+body;
+}
+$("gs-body").addEventListener("click",e=>{
+  const v=e.target.closest("[data-gv]"),o=e.target.closest("[data-gopen]"),w=e.target.closest("[data-gview]"),bk=e.target.closest("[data-gback]");
+  if(w){gsOpen=w.dataset.gview;renderGS();window.scrollTo(0,0);return;}
+  if(bk){gsOpen="";renderGS();return;}
+  if(v){gsView=v.dataset.gv;try{localStorage.setItem("gs_view",gsView);}catch(x){}renderGS();}
+  if(o){gsOpen="";gsSel=o.dataset.gopen;gsView="my";try{localStorage.setItem("gs_group",gsSel);localStorage.setItem("gs_view","my");}catch(x){}renderGS();}
+});
+$("gs-body").addEventListener("change",async e=>{
+  if(e.target.id==="gs-pick"){gsOpen="";gsSel=e.target.value;try{localStorage.setItem("gs_group",gsSel);}catch(x){}renderGS();return;}
+  if(e.target.id==="gs-fac"){const n=gsSel;try{await db.doc("groupFacilitators/gtm").set(Object.assign({},gfac,{[n]:e.target.value.trim()}));setStatus($("gs-status"),"Saved.","ok");}catch(err){setStatus($("gs-status"),"Could not save.","err");}}
+});
+function runChase(){
+  const bid=new Map(all.map(m=>[m.id,m])),hasA=new Set(exitsAll.filter(d=>d.gtm&&d.gtm.a_path).map(d=>(bid.get(d.id)||{}).rosterId).filter(Boolean)),hasM=new Set(all.map(m=>m.rosterId).filter(Boolean));
+  const g=Object.values(plans).filter(p=>p.session==="gtm"),started=new Set(g.map(p=>p.founderId)),done=new Set(g.filter(p=>p.status==="done").map(p=>p.founderId));
+  const pitched=new Set(rounds.filter(r=>r.session==="gtm"&&(r.phase||"before")==="before").map(r=>r.founderId));
+  const L=[["No worksheet A yet",roster.filter(r=>!hasA.has(r.id)).map(r=>[r,hasM.has(r.id)?"":" · no manifest"]),true]];
+  if(savedGroups.gtm)L.push(["Have not started their hot seat",roster.filter(r=>!started.has(r.id)).map(r=>[r,""]),true],["Hot seat not done yet",roster.filter(r=>started.has(r.id)&&!done.has(r.id)).map(r=>[r,""]),true]);
+  L.push(["No before pitch opened yet",roster.filter(r=>!pitched.has(r.id)).map(r=>[r,""]),true]);
+  return L;
+}
+let stageDoc=null;
+function renderStage(){
+  const el=$("stage-bar");if(!el)return;
+  const b=!!(stageDoc&&stageDoc.stage==="b"),bf=rounds.filter(r=>(r.phase||"before")==="before"),open=bf.filter(r=>r.status==="open").length,closed=bf.length-open;
+  const hint=!b&&closed>0&&!open?` All ${closed} before rounds are closed, so it is time to open worksheet B.`:!b?` ${closed} before round${closed===1?"":"s"} closed, ${open} open.`:"";
+  el.innerHTML=b?`<b>Worksheet B is open.</b> Worksheet A is closed for founders. <button class="ghost" data-stage="a">Reopen worksheet A</button>`:`<b>Worksheet A is open.</b>${hint} <button class="${!b&&closed>0&&!open?"primary":"ghost"}" data-stage="b">Close worksheet A and open worksheet B</button>`;
+}
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-stage]");if(!b||!db)return;
+  try{await db.doc("stage/gtm").set({stage:b.dataset.stage,at:Date.now()});stageDoc={stage:b.dataset.stage};renderStage();}catch(err){}});
+function renderRun(){
+  renderGS();
+  const el=$("run-body");if(!el||$("p-run").hidden)return;
+  const opened=new Set(Array.from(el.querySelectorAll("details[open]")).map(d=>d.dataset.i));
+  el.innerHTML=`<section class="block" style="margin-bottom:16px"><h3>Where we are</h3>${runStatus()}</section>
+  <section class="block" style="margin-bottom:16px"><h3>Not yet</h3><p class="sub">Who to chase. Names come off the lists as founders catch up.</p>${runChase().map((l,i)=>`<details data-i="c${i}" style="margin-bottom:6px"${opened.has("c"+i)?" open":""}><summary><b>${esc(l[0])}</b> <span class="tag">${l[1].length}</span></summary>${l[1].length?`<ul>${l[1].map(x=>`<li>${esc(x[0].name)} <span class="status">${esc(x[0].program||"")}${x[1]}</span></li>`).join("")}</ul>`:'<div class="status">Everyone is in.</div>'}</details>`).join("")}</section>
+  ${RUN.map((r,i)=>`<details class="block" data-i="${i}" style="margin-bottom:8px"${opened.has(String(i))?" open":""}><summary><b>${i+1}. ${esc(r.t)}</b> <span class="status">${esc(r.w)}</span></summary>
+    <div class="f" style="gap:8px;margin-top:8px"><div><div class="status">You do</div><ul>${r.do.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+    <div><div class="status">In the app</div><div>${esc(r.app)}</div></div><div><div class="status">Say</div><div>${esc(r.say)}</div></div><div><div class="status">Watch for</div><div>${esc(r.watch)}</div></div></div></details>`).join("")}
+  <section class="block" style="margin-top:16px"><h3>Sherpa question bank</h3><p class="sub">Use these in the questions step of the hot seat. Questions only, no advice.</p>
+    ${RUN_Q.map(q=>`<div class="f" style="margin-bottom:8px"><span style="font-weight:500">${esc(q[0])}</span><ul>${q.slice(1).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`).join("")}</section>`;
+}
+$("pa-csv").addEventListener("click",async()=>{
+  const dl=await claude.use("downloads");if(!dl){setStatus($("pl-status"),"Download is not available in this view.","err");return;}
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"',ks=CARD.gtm.map(c=>c[0]);
+  const lines=[["name","startup","program"].concat(ks).join(",")].concat(exitsAll.filter(d=>d.gtm&&d.gtm.a_path).map(d=>{const m=all.find(x=>x.id===d.id)||{};return [m.name,m.startup,m.program].concat(ks.map(k=>d.gtm[k])).map(q).join(",");}));
+  try{await dl.save({filename:"worksheet-a-gtm.csv",data:lines.join("\n")});}catch(e){setStatus($("pl-status"),"Download cancelled.","err");}
+});
+async function initOrg(user){
+  /* Access gate: editors only. Database rules refuse reads to everyone else too. */
+  if(!user||!db||!user.canEdit()){$("gate").textContent="This account is not an organizer. Sign in with an organizer email.";return;}
+  $("gate").hidden=true;$("console").hidden=false;
+  db.doc("stage/gtm").onSnapshot(s=>{stageDoc=s.exists?s.data():null;renderStage();},()=>{});
+  if(window.WORKSHOP_MODE==="admin"){myManifest={rosterId:null,name:window.WORKSHOP_FAC||"Facilitator",startup:""};const vr=$("view-rate");$("p-frate").appendChild(vr);vr.hidden=false;}
+  try{const rs=await db.collection("roster").get();roster=rs.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>a.name.localeCompare(b.name));}catch(e){}
+  db.collection("manifest").onSnapshot(s=>{all=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderOrg();renderExits();},()=>{$("rows").innerHTML='<tr><td colspan="8" class="status">Could not load responses.</td></tr>';});
+  db.collection("ratings").onSnapshot(s=>{ratings={};s.docs.forEach(d=>{ratings[d.id]=d.data();});renderOrg();},()=>{});
+  db.collection("peerRatings").onSnapshot(s=>{pr=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderRounds();renderGroups();},()=>{});
+  let rawSaved={},rawPub={};
+  const mergeGroups=()=>{savedGroups=Object.assign({},rawPub,rawSaved);renderGroups();renderNext();renderGS();renderRun();};
+  db.collection("groups").onSnapshot(s=>{rawSaved={};s.docs.forEach(d=>{rawSaved[d.id]=d.data();});mergeGroups();},()=>{});
+  db.collection("groupsPublished").onSnapshot(s=>{rawPub={};s.docs.forEach(d=>{const x=d.data(),gs=x.groups||[];rawPub[d.id]={session:d.id,size:gs[0]?(gs[0].members||[]).length:5,groups:gs.map(g=>({n:g.n,members:(g.members||[]).map(m=>typeof m==="string"?m:m.id)})),published:true};});mergeGroups();},()=>{});
+  orgReady=true;subRounds();subPlans();renderRounds();
+  db.collection("cards").onSnapshot(s=>{exitsAll=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderExits();renderRun();},()=>{});
+  db.collection("groupFacilitators").onSnapshot(s=>{gfac={};s.docs.forEach(d=>{if(d.id==="gtm")gfac=d.data();});renderGS();},()=>{});
+  db.collection("planChecks").onSnapshot(s=>{planChecks={};s.docs.forEach(d=>{planChecks[d.id]=d.data();});renderPlans();},()=>{});
+}
+(async()=>{
+  const user=await claude.use("user");
+  db=await claude.use("db");
+  me=user;
+  if(!db||!user){route();return;}
+  uid=await user.id();
+  $("form").hidden=false;
+  try{const rs=await db.collection("roster").get();
+    roster=rs.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>a.name.localeCompare(b.name));
+    rosterMap={};roster.forEach(r=>{rosterMap[r.id]=r;});
+    $("who").innerHTML='<option value="">Select your name</option>'+roster.map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join("");
+    if(!roster.length)setStatus($("status"),"The founder list is not loaded yet. Ask the build3 team.","err");}catch(e){}
+  $("who").addEventListener("change",()=>{const r=rosterMap[$("who").value];$("whoinfo").textContent=r?r.program:"";});
+  try{const s=await db.doc("manifest/"+uid).get();if(s.exists){myManifest=s.data();fill(myManifest);setStatus($("status"),"Your saved manifest is loaded. Edit and submit again to update it.");}}catch(e){}
+  $("fnav").hidden=false;route();
+})();
+</script>
+
+</body></html>

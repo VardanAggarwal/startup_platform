@@ -1,0 +1,8 @@
+# Personal data: real founder phone numbers, live database, snapshots
+data/*
+!data/roster.example.json
+*.db
+*.db-*
+.mcp.json
+node_modules/
+.DS_Store
