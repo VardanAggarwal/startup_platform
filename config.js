@@ -1,1 +1,2 @@
-window.WORKSHOP_CONFIG={url:"https://wuntjhuoqncqyllfqcib.supabase.co",key:"sb_publishable_Rr9FsHCdvT_6Cfmtjwe0Xg_ZqzHlCpi"};
+// Supabase project for this workshop. Leave empty ({}) to use the local Node + SQLite server instead.
+window.WORKSHOP_CONFIG={url:"https://qvifxswswgfgzpxqllbm.supabase.co",key:"sb_publishable_o-ZQODzg06cH9zclYWX8aA_13ITwfDj"};

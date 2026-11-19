@@ -24,3 +24,8 @@ Run the LOCKDOWN lines at the bottom of `schema.sql`, then add real founder sign
 ## Setup after cloning
 - `data/` is not in git (it holds founder phone numbers and the live database). Create `data/roster.json` like `data/roster.example.json`: `[{ "id", "name", "program", "phone" }]`. Ids are `"f" + first 10 hex of sha256("susegad-ws|" + phone)`. Phone is never served.
 - Run `node server.js` (Node 22+). Admin login: env `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+
+## Supabase mode (default when `config.js` has a URL)
+- `config.js` sets `WORKSHOP_CONFIG`; `shim.js` then calls Supabase directly (PostgREST + RPC), so the pages can be static-hosted and `server.js` is not needed. Blank the config (`window.WORKSHOP_CONFIG={}`) to use the local Node + SQLite server.
+- Apply `schema.sql` to the project, load the roster into `workshop_roster`, set the organizer with `select workshop_set_admin('email','password')`, and copy data with `import-supabase.js`.
+- Access rules live in Postgres (RLS + `workshop_can`). Founder mode is still test mode (no sign-in); see the header in `schema.sql`.

@@ -1,10 +1,40 @@
-// Local mode: talks to server.js (JSON-file database). Founders pick their name; organizers sign in with email + password.
+// Talks to Supabase (config.js sets WORKSHOP_CONFIG) or, when that is empty, to local server.js (SQLite). Founders pick their name; organizers sign in with email + password.
 (function () {
   const ADMIN = window.WORKSHOP_MODE === "admin";
   const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} return null; };
   const founderId = () => store("ws_founder");
   const token = () => store("ws_admin");
+  const CFG = window.WORKSHOP_CONFIG && window.WORKSHOP_CONFIG.url ? window.WORKSHOP_CONFIG : null;
+  const POLL = CFG ? 5000 : 3000;
+  // Supabase transport: maps the same /api/... calls onto PostgREST (see schema.sql). Access rules are enforced by RLS, not here.
+  async function sbApi(method, url, body) {
+    const p = url.split("?")[0].split("/").filter(Boolean).map(decodeURIComponent), rest = CFG.url + "/rest/v1/";
+    const h = { apikey: CFG.key, "Content-Type": "application/json" };
+    if (ADMIN && token()) h["x-admin-token"] = token();
+    if (!ADMIN && founderId()) h["x-founder-id"] = founderId();
+    const call = async (m, u, b, extra) => {
+      const r = await fetch(u, { method: m, headers: Object.assign({}, h, extra), body: b === undefined ? undefined : JSON.stringify(b) });
+      const t = await r.text();
+      if (!r.ok) { let c = ""; try { c = JSON.parse(t).code; } catch (e) {} const e = new Error("HTTP " + r.status); e.status = c === "P0002" ? 404 : r.status; throw e; }
+      return t ? JSON.parse(t) : null;
+    };
+    const rpc = (n, a) => call("POST", rest + "rpc/" + n, a || {});
+    const q = encodeURIComponent;
+    if (p[1] === "login") { const t = await rpc("workshop_admin_login", { p_email: body.email, p_password: body.password }); if (!t) { const e = new Error("HTTP 401"); e.status = 401; throw e; } return { token: t }; }
+    if (p[1] === "roster") return rpc("workshop_roster");
+    if (p[1] === "me") return rpc("workshop_me");
+    if (p[1] === "manifests") return rpc("workshop_manifests");
+    if (p[1] === "col") return call("GET", rest + "workshop_kv?collection=eq." + q(p[2]) + "&select=id,data");
+    if (p[1] === "doc") {
+      const [coll, id] = [p[2], p[3]];
+      if (method === "GET") { const r = await call("GET", rest + "workshop_kv?collection=eq." + q(coll) + "&id=eq." + q(id) + "&select=data"); return r.length ? { exists: true, data: r[0].data } : { exists: false }; }
+      if (method === "PUT") { await call("POST", rest + "workshop_kv?on_conflict=collection,id", { collection: coll, id, data: body, updated_at: new Date().toISOString() }, { Prefer: "resolution=merge-duplicates,return=minimal" }); return { ok: true }; }
+      if (method === "PATCH") { await rpc("workshop_kv_patch", { p_coll: coll, p_id: id, p_patch: body }); return { ok: true }; }
+    }
+    throw new Error("unsupported " + url);
+  }
   async function api(method, url, body) {
+    if (CFG) return sbApi(method, url, body);
     const h = { "Content-Type": "application/json" };
     if (ADMIN && token()) h.Authorization = "Bearer " + token();
     if (!ADMIN && founderId()) h["x-founder-id"] = founderId();
@@ -26,7 +56,7 @@
     if (key) { const c = cget(key); if (c !== null) { last = JSON.stringify(c); cb(c); } }
     const tick = async () => { try { const v = await get(); const j = JSON.stringify(v); if (key) cput(key, v); if (j !== last) { last = j; if (!dead) cb(v); } } catch (e) { if (last !== "err") { last = "err"; errCb && errCb(e); } } };
     const reg = { coll: key ? key.slice(2).split("/")[0] : null, run: tick }; ticks.add(reg);
-    tick(); const t = setInterval(tick, 3000); return () => { dead = true; clearInterval(t); ticks.delete(reg); };
+    tick(); const t = setInterval(tick, POLL); return () => { dead = true; clearInterval(t); ticks.delete(reg); };
   };
   function docRef(coll, id) {
     const ref = {
