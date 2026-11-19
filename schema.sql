@@ -121,8 +121,11 @@ GRANT EXECUTE ON FUNCTION public.workshop_hdr(text), public.workshop_is_admin(),
 -- Pages listen on channel "workshop" and fetch only that one document, so nothing polls the database.
 CREATE OR REPLACE FUNCTION public.workshop_notify() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE c text := coalesce(NEW.collection, OLD.collection);
 BEGIN
-  PERFORM realtime.send(jsonb_build_object('c', coalesce(NEW.collection, OLD.collection), 'id', coalesce(NEW.id, OLD.id)), 'changed', 'workshop', false);
+  -- Private, high-frequency collections never ping: every rating or card save would otherwise fan out to every open page.
+  IF c IN ('peerRatings', 'cards') THEN RETURN NULL; END IF;
+  PERFORM realtime.send(jsonb_build_object('c', c, 'id', coalesce(NEW.id, OLD.id)), 'changed', 'workshop', false);
   RETURN NULL;
 END $$;
 REVOKE ALL ON FUNCTION public.workshop_notify() FROM PUBLIC, anon, authenticated;

@@ -5,7 +5,7 @@
   const founderId = () => store("ws_founder");
   const token = () => store("ws_admin");
   const CFG = window.WORKSHOP_CONFIG && window.WORKSHOP_CONFIG.url ? window.WORKSHOP_CONFIG : null;
-  const POLL = CFG ? 60000 : 3000; // Supabase: no constant pinging. Refresh on load, after your own saves, when you return to the tab, on page change, via the Refresh button, and a slow 60 s check while the tab is open.
+  const POLL = CFG ? (ADMIN ? 15000 : 60000) : 3000; // organizers (few) check every 15 s while visible so rating progress stays current; founders rely on pings, 60 s fallback. // Supabase: no constant pinging. Refresh on load, after your own saves, when you return to the tab, on page change, via the Refresh button, and a slow 60 s check while the tab is open.
   // Supabase transport: maps the same /api/... calls onto PostgREST (see schema.sql). Access rules are enforced by RLS, not here.
   async function sbApi(method, url, body) {
     const p = url.split("?")[0].split("/").filter(Boolean).map(decodeURIComponent), rest = CFG.url + "/rest/v1/";
@@ -13,8 +13,11 @@
     if (ADMIN && token()) h["x-admin-token"] = token();
     if (!ADMIN && founderId()) h["x-founder-id"] = founderId();
     const call = async (m, u, b, extra) => {
-      const r = await fetch(u, { method: m, headers: Object.assign({}, h, extra), body: b === undefined ? undefined : JSON.stringify(b) });
-      const t = await r.text();
+      let r, t;
+      for (let i = 0; ; i++) { // busy moments (everyone opening at once): retry network errors, 429 and 5xx with a growing, random wait
+        try { r = await fetch(u, { method: m, headers: Object.assign({}, h, extra), body: b === undefined ? undefined : JSON.stringify(b) }); t = await r.text(); if (r.ok || (r.status < 500 && r.status !== 429) || i >= 4) break; } catch (e) { if (i >= 4) throw e; }
+        await new Promise((ok) => setTimeout(ok, 400 * Math.pow(2, i) + Math.random() * 600));
+      }
       if (!r.ok) { let c = ""; try { c = JSON.parse(t).code; } catch (e) {} const e = new Error("HTTP " + r.status); e.status = c === "P0002" ? 404 : r.status; throw e; }
       return t ? JSON.parse(t) : null;
     };
