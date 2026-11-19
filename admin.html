@@ -131,7 +131,7 @@ th small{display:block;text-transform:none;letter-spacing:0;white-space:normal;f
     <div>
       <div class="eyebrow">Susegad Camp · build3 bfb &amp; bia</div>
       <h1>GTM workshop</h1>
-      <p class="sub">Five minutes. What you're stuck on, what you want to learn and what you can give back. We use this to match you with peers and mentors over the next three weeks.</p>
+      <p class="sub">Build your pitch, get scored by the room, then work your plan with a small group.</p>
     </div>
     <div class="tabs" id="fnav" hidden><button data-h="work" aria-selected="true">Worksheets</button><button data-h="rate" aria-selected="false">Rate pitches</button><button data-h="groups" aria-selected="false">My groups</button><button data-h="scores" aria-selected="false">My scores</button></div>
   </header>
@@ -692,11 +692,11 @@ async function loadWork(){
     try{const s=await db.doc("cards/"+uid).get();cards=s.exists?s.data():{};syncStartup();}catch(e){}
     const gs=pubGroups;if(!Object.keys(gs).length)loadGroups();
     const box=$("work-body");
-    box.innerHTML='<div id="work-main"><section class="block" style="margin-bottom:16px"><h2>My problem card</h2><p class="sub">Fill it before your hot seat. Only you can see it until you start your hot seat, then your group sees it.</p><input type="hidden" id="card-session" value="gtm"><div id="card-form" class="f" style="gap:12px"></div></section><section class="block" id="work-b" style="margin-bottom:16px" hidden></section><section class="block" id="work-pitch" style="margin-bottom:16px" hidden></section><section class="block" id="work-seats" style="margin-bottom:16px"></section></div><div id="work-sheet" hidden></div>';
+    box.innerHTML='<div id="work-main"><section class="block" style="margin-bottom:16px"><h2>Worksheet A</h2><p class="sub">About two minutes. It becomes your 2-minute pitch. Only you can see it until you start your hot seat, then your group sees it.</p><input type="hidden" id="card-session" value="gtm"><div id="card-form" class="f" style="gap:12px"></div></section><section class="block" id="work-b" style="margin-bottom:16px" hidden></section><section class="block" id="work-pitch" style="margin-bottom:16px" hidden></section><section class="block" id="work-seats" style="margin-bottom:16px"></section></div><div id="work-sheet" hidden></div>';
     $("card-session").addEventListener("change",()=>{cardSession=$("card-session").value;renderCard();});
     $("card-form").addEventListener("click",saveCard);
     $("work-b").addEventListener("click",e=>{if(!e.target.closest("[data-openb]"))return;const mine=myManifest&&plans[planId("gtm",myManifest.rosterId)];openPlan=mine?planId("gtm",myManifest.rosterId):"draft";showSheet(openPlan);});
-    try{db.doc("stage/gtm").onSnapshot(s=>{const b=!!(s.exists&&s.data()&&s.data().stage==="b");if(b!==stageB){stageB=b;renderCard();renderBBox();if(openPlan===null)renderSeats();}},()=>{});}catch(e){}
+    try{db.doc("stage/gtm").onSnapshot(s=>{const b=!!(s.exists&&s.data()&&s.data().stage==="b");if(!stageReady||b!==stageB){stageReady=true;stageB=b;renderCard();renderBBox();if(openPlan===null)renderSeats();}},()=>{if(!stageReady){stageReady=true;renderCard();}});}catch(e){stageReady=true;}setTimeout(()=>{if(!stageReady){stageReady=true;renderCard();}},5000);
     $("work-seats").addEventListener("click",seatClick);$("work-pitch").addEventListener("click",pitchClick);
     $("card-form").addEventListener("change",e=>{if(e.target.dataset&&e.target.dataset.k==="a_path")applyPath();});
     subResults();
@@ -712,8 +712,10 @@ function renderBBox(){
   el.hidden=false;
   el.innerHTML=`<h2>Worksheet B</h2><p class="sub">Worksheet A is closed. Build your plan for the next 14 days here. It saves when you leave a field, and you can keep working on it in your hot seat.</p><div class="actions"><button class="primary" data-openb="1">${n?"Continue worksheet B":"Open worksheet B"}</button><span class="status">${n} answer${n===1?"":"s"} saved so far</span></div>`;
 }
+let stageReady=false;
 function renderCard(){
   const el=$("card-form");if(!el)return;const v=cards[cardSession]||{};
+  if(!stageReady){el.innerHTML='<div aria-busy="true" aria-label="Loading your worksheet" style="display:grid;gap:12px">'+[60,44,44,84,44].map(h=>`<div style="height:${h}px;border-radius:10px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div>`).join("")+'</div><style>@keyframes wsk{from{opacity:.45}to{opacity:1}}</style>';return;}
   if(stageB){el.innerHTML='<div class="notice">Worksheet A is closed. Your answers are saved.</div>'+(CARD[cardSession].filter(c=>v[c[0]]).map(c=>`<div><div class="status">${esc(c[1])}</div><div>${esc(v[c[0]])}</div></div>`).join("")||'<div class="status">You did not save worksheet A.</div>');renderPitch();renderBBox();return;}
   el.innerHTML=CARD[cardSession].map(c=>fx(c,v[c[0]]||"","data-k")).join("")+'<div class="actions"><button class="primary" data-savecard="1">Save card</button><span class="status" id="card-status" role="status"></span></div>';applyPath();renderPitch();
 }
