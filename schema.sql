@@ -116,3 +116,15 @@ GRANT EXECUTE ON FUNCTION public.workshop_hdr(text), public.workshop_is_admin(),
   public.workshop_kv_patch(text,text,jsonb), public.workshop_roster(), public.workshop_me(), public.workshop_manifests(),
   public.workshop_admin_login(text,text), public.workshop_reset() TO anon, authenticated;
 -- workshop_set_admin and workshop_startup stay service-role only (run workshop_set_admin from the SQL editor / MCP).
+
+-- LIVE UPDATES: every change to workshop_kv sends a tiny public Realtime broadcast {c: collection, id}. No data is in the ping.
+-- Pages listen on channel "workshop" and fetch only that one document, so nothing polls the database.
+CREATE OR REPLACE FUNCTION public.workshop_notify() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  PERFORM realtime.send(jsonb_build_object('c', coalesce(NEW.collection, OLD.collection), 'id', coalesce(NEW.id, OLD.id)), 'changed', 'workshop', false);
+  RETURN NULL;
+END $$;
+REVOKE ALL ON FUNCTION public.workshop_notify() FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS workshop_kv_notify ON public.workshop_kv;
+CREATE TRIGGER workshop_kv_notify AFTER INSERT OR UPDATE OR DELETE ON public.workshop_kv FOR EACH ROW EXECUTE FUNCTION public.workshop_notify();

@@ -29,3 +29,4 @@ Run the LOCKDOWN lines at the bottom of `schema.sql`, then add real founder sign
 - `config.js` sets `WORKSHOP_CONFIG`; `shim.js` then calls Supabase directly (PostgREST + RPC), so the pages can be static-hosted and `server.js` is not needed. Blank the config (`window.WORKSHOP_CONFIG={}`) to use the local Node + SQLite server.
 - Apply `schema.sql` to the project, load the roster into `workshop_roster`, set the organizer with `select workshop_set_admin('email','password')`, and copy data with `import-supabase.js`.
 - Access rules live in Postgres (RLS + `workshop_can`). Founder mode is still test mode (no sign-in); see the header in `schema.sql`.
+- Live updates: no polling. A trigger sends a Realtime ping `{collection, id}` and each open page fetches only that document. Fallbacks: 60 s check while the tab is visible, refresh on tab focus / page change, and a Refresh button.

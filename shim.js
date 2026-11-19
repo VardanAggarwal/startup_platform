@@ -5,7 +5,7 @@
   const founderId = () => store("ws_founder");
   const token = () => store("ws_admin");
   const CFG = window.WORKSHOP_CONFIG && window.WORKSHOP_CONFIG.url ? window.WORKSHOP_CONFIG : null;
-  const POLL = CFG ? 5000 : 3000;
+  const POLL = CFG ? 60000 : 3000; // Supabase: no constant pinging. Refresh on load, after your own saves, when you return to the tab, on page change, via the Refresh button, and a slow 60 s check while the tab is open.
   // Supabase transport: maps the same /api/... calls onto PostgREST (see schema.sql). Access rules are enforced by RLS, not here.
   async function sbApi(method, url, body) {
     const p = url.split("?")[0].split("/").filter(Boolean).map(decodeURIComponent), rest = CFG.url + "/rest/v1/";
@@ -50,14 +50,36 @@
   const cget = (k) => { try { const s = localStorage.getItem(ckey(k)); return s ? JSON.parse(s) : null; } catch (e) { return null; } };
   const cput = (k, v) => { try { localStorage.setItem(ckey(k), JSON.stringify(v)); } catch (e) {} };
   const ticks = new Set();
-  const bump = (coll) => ticks.forEach((t) => { if (t.coll === coll) t.run(); });
-  const watch = (get, cb, errCb, key) => {
+  let lastAll = 0;
+  const refreshAll = (force) => { const n = Date.now(); if (!force && n - lastAll < 3000) return; lastAll = n; ticks.forEach((t) => t.run()); };
+  if (CFG) { document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshAll(); }); window.addEventListener("focus", () => refreshAll()); window.addEventListener("hashchange", () => refreshAll()); }
+  // Own save or a Realtime ping for one document: lists fetch just that document, single-document watchers re-read themselves.
+  const bump = (coll, id) => ticks.forEach((t) => { if (t.coll === coll) (t.ev && id !== undefined ? t.ev(id) : t.run()); });
+  const watch = (get, cb, errCb, key, ev) => {
     let last = null, dead = false;
     if (key) { const c = cget(key); if (c !== null) { last = JSON.stringify(c); cb(c); } }
-    const tick = async () => { try { const v = await get(); const j = JSON.stringify(v); if (key) cput(key, v); if (j !== last) { last = j; if (!dead) cb(v); } } catch (e) { if (last !== "err") { last = "err"; errCb && errCb(e); } } };
-    const reg = { coll: key ? key.slice(2).split("/")[0] : null, run: tick }; ticks.add(reg);
-    tick(); const t = setInterval(tick, POLL); return () => { dead = true; clearInterval(t); ticks.delete(reg); };
+    const apply = (v) => { const j = JSON.stringify(v); if (key) cput(key, v); if (j !== last) { last = j; if (!dead) cb(v); } };
+    const tick = async () => { try { apply(await get()); } catch (e) { if (last !== "err") { last = "err"; errCb && errCb(e); } } };
+    const reg = { coll: key ? key.slice(2).split("/")[0] : null, run: tick, ev: ev ? async (id) => { try { const v = await ev(id); if (v) apply(v); else await tick(); } catch (e) {} } : null }; ticks.add(reg);
+    tick(); const t = setInterval(() => { if (!(CFG && document.hidden)) tick(); }, POLL); return () => { dead = true; clearInterval(t); ticks.delete(reg); };
   };
+  // Realtime ping (schema.sql: workshop_notify trigger). The ping carries only {collection, id}; each page then fetches that one document.
+  const pend = {};
+  function onPing(p) {
+    if (!p || !p.c) return; const k = p.c + "/" + p.id; clearTimeout(pend[k]);
+    pend[k] = setTimeout(() => { delete pend[k]; bump(p.c, p.id); }, 300 + Math.random() * 900); // coalesce rapid saves, spread 50 pages apart
+  }
+  function startRealtime() {
+    const go = () => {
+      try {
+        const rt = window.supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: false, autoRefreshToken: false }, realtime: { params: { eventsPerSecond: 10 } } });
+        rt.channel("workshop").on("broadcast", { event: "changed" }, (m) => onPing(m.payload)).subscribe((st) => { if (st === "SUBSCRIBED") refreshAll(true); });
+      } catch (e) {}
+    };
+    if (window.supabase) return go();
+    const sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"; sc.onload = go; document.head.appendChild(sc);
+  }
+  if (CFG) startRealtime();
   function docRef(coll, id) {
     const ref = {
       async get() {
@@ -65,8 +87,8 @@
         const r = await api("GET", "/api/doc/" + coll + "/" + encodeURIComponent(id));
         return { id, exists: !!r.exists, data: () => r.data };
       },
-      async set(o) { if (coll === "manifest") return; await api("PUT", "/api/doc/" + coll + "/" + encodeURIComponent(id), clean(o)); bump(coll); },
-      async update(o) { if (coll === "manifest") return; await api("PATCH", "/api/doc/" + coll + "/" + encodeURIComponent(id), clean(o)); bump(coll); },
+      async set(o) { if (coll === "manifest") return; await api("PUT", "/api/doc/" + coll + "/" + encodeURIComponent(id), clean(o)); bump(coll, id); },
+      async update(o) { if (coll === "manifest") return; await api("PATCH", "/api/doc/" + coll + "/" + encodeURIComponent(id), clean(o)); bump(coll, id); },
       onSnapshot(cb, errCb) { return watch(async () => { const s = await ref.get(); return { exists: s.exists, data: s.data() }; }, (v) => cb({ id, exists: v.exists, data: () => v.data }), errCb, "d:" + coll + "/" + id); },
     };
     return ref;
@@ -78,7 +100,12 @@
         if (coll === "manifest") return rows((await api("GET", "/api/manifests")).map((m) => ({ id: m.id, data: m })));
         return rows(await api("GET", "/api/col/" + coll));
       },
-      onSnapshot(cb, errCb) { return watch(async () => (await ref.get()).docs.map((d) => ({ id: d.id, data: d.data() })), (a) => cb(rows(a)), errCb, "c:" + coll); },
+      onSnapshot(cb, errCb) {
+        let cur = null;
+        const arr = () => Object.keys(cur).map((id) => ({ id, data: cur[id] }));
+        return watch(async () => { const a = (await ref.get()).docs.map((d) => ({ id: d.id, data: d.data() })); cur = Object.fromEntries(a.map((x) => [x.id, x.data])); return a; }, (a) => cb(rows(a)), errCb, "c:" + coll,
+          CFG && coll !== "roster" && coll !== "manifest" ? async (id) => { if (!cur) return null; const r = await api("GET", "/api/doc/" + coll + "/" + encodeURIComponent(id)); if (r.exists) cur[id] = r.data; else delete cur[id]; return arr(); } : null);
+      },
     };
     return ref;
   }
@@ -94,6 +121,7 @@
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   function overlay(html) { let o = document.getElementById("ws-ov"); if (o) o.remove(); o = document.createElement("div"); o.id = "ws-ov"; o.style.cssText = css; o.innerHTML = html; document.body.appendChild(o); return o; }
   function chip(text, fn) { if (document.getElementById("ws-out")) return; const b = document.createElement("button"); b.id = "ws-out"; b.textContent = text; b.style.cssText = "position:fixed;left:12px;bottom:12px;z-index:9000;min-height:36px;padding:0 12px;border-radius:18px;border:1px solid #9aa;background:var(--card,#fff);color:inherit;font-size:13px"; b.onclick = fn; document.body.appendChild(b); }
+  function refreshChip() { if (!CFG || document.getElementById("ws-ref")) return; const b = document.createElement("button"); b.id = "ws-ref"; b.textContent = "↻ Refresh"; b.style.cssText = "position:fixed;right:12px;bottom:12px;z-index:9000;min-height:36px;padding:0 12px;border-radius:18px;border:1px solid #9aa;background:var(--card,#fff);color:inherit;font-size:13px"; b.onclick = () => { b.textContent = "Refreshing…"; refreshAll(true); setTimeout(() => (b.textContent = "↻ Refresh"), 1200); }; document.body.appendChild(b); }
   async function pickFounder() {
     if (document.getElementById("ws-ov")) return;
     const srt = (l) => l.sort((a, b) => a.name.localeCompare(b.name));
@@ -125,6 +153,7 @@
         if (!founderId()) { await pickFounder(); return null; }
         chip("Not you? Switch person", () => { store("ws_founder", null); location.reload(); });
       }
+      refreshChip();
       return name === "db" ? db : name === "user" ? user : null;
     },
   };
