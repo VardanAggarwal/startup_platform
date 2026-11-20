@@ -28,8 +28,8 @@ const AI_THEMES=["Marketing & content","Sales & lead gen","Hiring & team","Ops &
 const CARD_AI=[
   ["ai_tools","Which AI tools do I use today? (e.g. Claude Code, Codex, ChatGPT, Cursor)","in"],
   ["ai_comfort","How comfortable am I with AI? 1 = barely used it, 3 = use it weekly for a few tasks, 5 = build workflows/agents with it","sel",null,["1","2","3","4","5"]],
-  ["ai_t1","My #1 priority theme (decides my group)","sel",null,AI_THEMES],
-  ["ai_t2","My #2 priority theme (backup if #1 is too small)","sel",null,AI_THEMES]
+  ["ai_t1","My #1 priority theme","sel",null,AI_THEMES],
+  ["ai_t2","My #2 priority theme","sel",null,AI_THEMES]
 ];
 
 // Worksheet B (Phase 3). Per founder, private, saved to plans/ai__{founderId}.
