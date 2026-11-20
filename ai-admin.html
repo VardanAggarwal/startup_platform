@@ -1,5 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>AI in Business — organizers</title><link rel="stylesheet" href="ai.css"></head>
+<title>AI in Business — organizers</title><link rel="stylesheet" href="ai.css">
+<style>.wrap{max-width:1400px}.aigrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px;align-items:start;margin-bottom:12px}.aigrid>.block{margin:0!important}</style></head>
 <body>
 <div class="wrap">
   <div style="margin-bottom:16px">
@@ -87,7 +88,7 @@ function renderAiAdmin(){
       +`<div class="actions"><button class="primary" data-aiform="1"${n<2?" disabled":""}>Form groups &amp; start Worksheet B</button>`
       +(n<2?`<span class="status">Need at least 2 saved to form groups.</span>`:`<span class="status">Preview below. You can move people after.</span>`)
       +`</div></section>`;
-    if(prev.length)html+=`<section class="block"><h3 style="margin-top:0">Preview</h3>`+prev.map(previewCard).join("")+`</section>`;
+    if(prev.length)html+=`<section class="block"><h3 style="margin-top:0">Preview</h3><div class="aigrid">`+prev.map(previewCard).join("")+`</div></section>`;
   }else{ // st==="b"
     const groups=(aiGroupsDoc&&aiGroupsDoc.groups)||[];
     const assigned=new Set();groups.forEach(g=>g.members.forEach(m=>assigned.add(m.id)));
@@ -98,7 +99,7 @@ function renderAiAdmin(){
       +`<div class="stat"><b>${groups.reduce((a,g)=>a+g.members.filter(m=>bFilled(aiPlans[m.id])).length,0)}/${groups.reduce((a,g)=>a+g.members.length,0)}</b><span>Worksheet B filled</span></div></div>`
       +`<div class="actions"><button class="ghost" data-aireform="1">Re-form from current answers</button>`
       +`<button class="ghost" data-aistage="a">Reopen Worksheet A</button></div></section>`;
-    html+=groups.map(g=>groupCard(g,groups)).join("");
+    html+=`<div class="aigrid">`+groups.map(g=>groupCard(g,groups)).join("")+`</div>`;
     if(unassigned.length){
       html+=`<section class="block" style="margin-bottom:12px"><h3 style="margin-top:0">Not in a group (${unassigned.length})</h3>`
         +`<p class="sub">Founders who saved Worksheet A after groups were formed.</p>`
