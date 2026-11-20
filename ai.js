@@ -65,22 +65,40 @@ function aiPickText(vb){
   if(a&&b)return(+a>=+b)?(vb.ai_s1||""):(vb.ai_s2||"");
   return vb.ai_s1||vb.ai_s2||"";
 }
-// Build the whole ~1-minute pitch from the founder's own B answers. No filler.
+// Build the whole ~1-minute pitch from the founder's own B answers, as spoken
+// sentences in three short paragraphs (problem, AI move, plan). No filler.
 // Skips empty fields; returns "" if there is nothing to say yet.
 function buildAiPitch(vb){
-  vb=vb||{};const trim=s=>String(s||"").trim().replace(/\s+/g," ").replace(/\.*$/,"");
-  const L=[];
-  const ps=trim(vb.ai_ps);
-  if(ps)L.push("The problem: "+ps+".");
-  const ctx=[];
-  if(trim(vb.ai_who))ctx.push("It hits "+trim(vb.ai_who).replace(/^it hits /i,""));
-  if(trim(vb.ai_cost))ctx.push("costs about "+trim(vb.ai_cost).replace(/^costs? (about )?/i,""));
-  if(ctx.length)L.push(ctx.join(", ")+" today.");
-  const pick=trim(aiPickText(vb));
-  if(pick)L.push("My AI move: "+pick+".");
-  if(trim(vb.ai_step))L.push("First step: "+trim(vb.ai_step)+".");
-  if(trim(vb.ai_delta))L.push("In 30 days: "+trim(vb.ai_delta)+".");
-  return L.join("\n");
+  vb=vb||{};
+  const t=s=>String(s||"").trim().replace(/\s+/g," ").replace(/[.!\s]+$/,"");
+  // lower-case the first letter when it sits mid-sentence, but keep acronyms/"I" (AI, GTM, CRM, I…)
+  const lc=s=>/^[A-Z][a-z]/.test(s)?s[0].toLowerCase()+s.slice(1):s;
+  const ps=t(vb.ai_ps),who=t(vb.ai_who).replace(/^it hits /i,""),cost=t(vb.ai_cost).replace(/^(it )?costs?( me| us)?( about)? /i,"");
+  const pick=t(aiPickText(vb)),step=t(vb.ai_step),delta=t(vb.ai_delta).replace(/^in 30 days,? /i,"");
+  const P=[];
+
+  // 1. The problem
+  let p1="";
+  if(ps)p1="The problem I keep running into is "+lc(ps)+".";
+  if(who&&cost)p1+=(p1?" ":"")+"It hits "+who+" hardest, and right now it costs about "+cost+".";
+  else if(who)p1+=(p1?" ":"")+"It hits "+who+" hardest.";
+  else if(cost)p1+=(p1?" ":"")+"Right now it costs about "+cost+".";
+  if(p1)P.push(p1);
+
+  // 2. The AI move
+  if(pick){
+    const both=t(vb.ai_s1)&&t(vb.ai_s2);
+    P.push((P.length?"So here's":"Here's")+" my AI move: "+pick+"."
+      +(both?" I weighed two ideas and went with this one because it gives the most impact for the effort.":""));
+  }
+
+  // 3. The plan
+  let p3="";
+  if(step)p3="My first step is simple: "+lc(step)+".";
+  if(delta)p3+=(p3?" ":"")+"If it works, in 30 days "+lc(delta)+".";
+  if(p3)P.push(p3);
+
+  return P.join("\n\n");
 }
 
 // --- Grouping (Phase 2) -----------------------------------------------------
