@@ -30,3 +30,40 @@ const CARD_AI=[
   ["ai_t1","My #1 priority theme (decides my group)","sel",null,AI_THEMES],
   ["ai_t2","My #2 priority theme (backup if #1 is too small)","sel",null,AI_THEMES]
 ];
+
+// --- Grouping (Phase 2) -----------------------------------------------------
+// Deterministic: same answers in -> same groups out. Tie-break by founder id.
+const AI_MAX=5; // hard cap per group
+// Split one theme's people into balanced chunks of <= AI_MAX (no chunk of 1).
+function aiSplit(arr){
+  const n=arr.length;
+  if(n<=AI_MAX)return[arr.slice()];
+  const k=Math.ceil(n/AI_MAX),base=Math.floor(n/k),extra=n%k,out=[];
+  let i=0;for(let c=0;c<k;c++){const size=base+(c<extra?1:0);out.push(arr.slice(i,i+size));i+=size;}
+  return out;
+}
+// people: [{id,name,t1,t2}]. Returns [{n,theme,members:[{id,name}]}].
+function buildAiGroups(people){
+  const ppl=people.slice().sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+  const buckets=new Map();AI_THEMES.forEach(t=>buckets.set(t,[]));
+  ppl.forEach(p=>{if(!buckets.has(p.t1))buckets.set(p.t1,[]);buckets.get(p.t1).push(p);});
+  // Singletons overflow to their #2 theme if that bucket has company.
+  buckets.forEach(arr=>{if(arr.length===1){const p=arr[0],dest=buckets.get(p.t2);if(dest&&dest!==arr&&dest.length>=1){dest.push(p);arr.length=0;}}});
+  // Whatever is still alone becomes a floating leftover.
+  const leftovers=[];
+  buckets.forEach(arr=>{if(arr.length===1){leftovers.push(arr[0]);arr.length=0;}});
+  // Emit theme groups (split oversized), following AI_THEMES order then extras.
+  const groups=[],themeOrder=AI_THEMES.concat([...buckets.keys()].filter(t=>AI_THEMES.indexOf(t)<0));
+  themeOrder.forEach(theme=>{const arr=buckets.get(theme);if(arr&&arr.length)aiSplit(arr).forEach(ch=>groups.push({theme,members:ch}));});
+  // Seat leftovers in any group with room, else start a mixed group.
+  leftovers.sort((a,b)=>a.id<b.id?-1:1).forEach(p=>{
+    const g=groups.find(g=>g.members.length<AI_MAX);
+    if(g)g.members.push(p);else groups.push({theme:"Mixed themes",members:[p]});});
+  // No group of 1: merge any solo into another group (prefer one with room).
+  for(let guard=0;guard<ppl.length+2;guard++){
+    const i=groups.findIndex(g=>g.members.length===1);if(i<0)break;
+    let host=groups.find((g,j)=>j!==i&&g.members.length<AI_MAX)
+      ||groups.filter((g,j)=>j!==i).sort((a,b)=>a.members.length-b.members.length)[0];
+    if(!host)break;host.members.push(groups[i].members[0]);groups.splice(i,1);}
+  return groups.map((g,i)=>({n:i+1,theme:g.theme,members:g.members.map(m=>({id:m.id,name:m.name}))}));
+}
