@@ -31,6 +31,33 @@ const CARD_AI=[
   ["ai_t2","My #2 priority theme (backup if #1 is too small)","sel",null,AI_THEMES]
 ];
 
+// Worksheet B (Phase 3). Per founder, private, saved to plans/ai__{founderId}.
+// Each founder fills their own; the group decides among themselves who pitches.
+const RATE15=["1","2","3","4","5"];
+const AIB=[
+  {h:"1 · One problem or process in my business",f:[
+    ["ai_ps","The problem or process that eats my time or money","ta"],
+    ["ai_who","Who feels it most (me, my team, customers…)","in"],
+    ["ai_cost","Roughly what it costs me now (hrs/week or ₹)","in"]
+  ]},
+  {h:"2 · Two ways AI could help",f:[
+    ["ai_s1","Option A — how AI could help","ta"],
+    ["ai_s1_imp","Option A — impact (1 low … 5 high)","sel",null,RATE15],
+    ["ai_s1_eff","Option A — effort (1 easy … 5 hard)","sel",null,RATE15],
+    ["ai_s2","Option B — how AI could help","ta"],
+    ["ai_s2_imp","Option B — impact (1 low … 5 high)","sel",null,RATE15],
+    ["ai_s2_eff","Option B — effort (1 easy … 5 hard)","sel",null,RATE15]
+  ]},
+  {h:"3 · The one I'll try",f:[
+    ["ai_pick","The one I'll try","sel",null,["Option A","Option B"]],
+    ["ai_step","My first step","ta"],
+    ["ai_delta","What changes in 30 days if it works","ta"]
+  ]}
+];
+const BKEYS=AIB.reduce((a,s)=>a.concat(s.f.map(c=>c[0])),[]);
+// impact ÷ effort, higher is a better bet. Returns "" when either side is missing.
+const aiBet=(imp,eff)=>{const i=+imp,e=+eff;return i&&e?(i/e).toFixed(2):"";};
+
 // --- Grouping (Phase 2) -----------------------------------------------------
 // Deterministic: same answers in -> same groups out. Tie-break by founder id.
 const AI_MAX=5; // hard cap per group

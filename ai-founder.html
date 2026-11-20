@@ -15,11 +15,16 @@
 <script src="shim.js"></script>
 <script src="ai.js"></script>
 <script>
-let db=null,uid=null,cards={},aiStage="",aiStageReady=false,aiEditing=false;
+let db=null,uid=null,cards={},aiStage="",aiStageReady=false,aiEditing=false,aiGroups=null,planB={};
+
 function aiClick(e){
   if(e.target.closest("[data-aisave]")){saveAiCard();return;}
   if(e.target.closest("[data-aiedit]")){aiEditing=true;renderAi();return;}
+  if(e.target.closest("[data-bsave]")){saveB();return;}
 }
+function aiChange(e){if(e.target.closest("[data-kb]"))updateBet();}
+
+// ---- Worksheet A (solo) ----
 async function saveAiCard(){
   const f=$("ai-form");if(!f)return;
   const v={};f.querySelectorAll("[data-k]").forEach(t=>{v[t.dataset.k]=t.value.trim();});
@@ -29,16 +34,49 @@ async function saveAiCard(){
   try{await db.doc("cards/"+uid).set(cards);aiEditing=false;renderAi();}
   catch(err){setStatus($("ai-status"),"Could not save. Check your connection.","err");}
 }
+
+// ---- Worksheet B (per founder, private) ----
+const myGroup=()=>((aiGroups&&aiGroups.groups)||[]).find(g=>(g.members||[]).some(m=>m.id===uid))||null;
+function readBForm(){const v={},f=$("ai-bform");if(f)f.querySelectorAll("[data-kb]").forEach(t=>{v[t.dataset.kb]=t.value.trim();});return v;}
+function updateBet(){
+  const el=$("ai-bet");if(!el)return;const v=readBForm();
+  const a=aiBet(v.ai_s1_imp,v.ai_s1_eff),b=aiBet(v.ai_s2_imp,v.ai_s2_eff);
+  if(!a&&!b){el.textContent="";return;}
+  const parts=[];if(a)parts.push("Option A "+a);if(b)parts.push("Option B "+b);
+  let tip="";if(a&&b)tip=" — "+(+a>+b?"Option A is the better bet":+b>+a?"Option B is the better bet":"a toss-up");
+  el.textContent="Impact ÷ effort (higher = better bet): "+parts.join(" · ")+tip;
+}
+async function saveB(){
+  const v=readBForm();
+  try{await db.doc("plans/ai__"+uid).set(Object.assign({session:"ai",founderId:uid,at:Date.now()},v));planB=v;setStatus($("ai-bstatus"),"Saved. Keep editing any time.","ok");}
+  catch(err){setStatus($("ai-bstatus"),"Could not save. Check your connection.","err");}
+}
+
 function renderAi(){
   const el=$("ai-body");if(!el)return;
   if(!aiStageReady){el.innerHTML='<section class="block"><p class="sub">Loading…</p></section>';return;}
   const v=cards.ai||{},saved=!!(v.ai_t1&&v.ai_t2);
   if(aiStage!=="a"&&aiStage!=="b"){
     el.innerHTML='<section class="block"><p class="sub">This session has not started yet. When the organizers open it, your worksheet appears here.</p></section>';return;}
+
   if(aiStage==="b"){
-    el.innerHTML='<section class="block">'+(saved
-      ?'<div class="notice">Worksheet A is closed and groups are being formed. Your group’s Worksheet B opens here shortly.</div>'
-      :'<div class="notice">Worksheet A is closed. You did not save it, so you are not in a group yet — please find an organizer.</div>')+'</section>';return;}
+    if(!saved){el.innerHTML='<section class="block"><div class="notice">Worksheet A is closed and you did not save it, so you are not in a group yet — please find an organizer.</div></section>';return;}
+    const g=myGroup();
+    if(!g){el.innerHTML='<section class="block"><div class="notice">Groups are formed but you are not placed yet. Find an organizer and they will add you.</div></section>';return;}
+    const members=(g.members||[]).map(m=>m.id===uid?`<b>${esc(m.name||"You")} (you)</b>`:esc(m.name||m.id)).join(", ");
+    const vb=planB||{};
+    el.innerHTML='<section class="block" style="margin-bottom:12px">'
+      +`<div class="notice"><b>Your group · Group ${g.n} — ${esc(g.theme)}</b><br>${members}</div>`
+      +'<p class="sub">Your group decides between you who pitches at the end (about a minute, no scoring). Everyone fills their own sheet below — it stays private to you.</p></section>'
+      +'<section class="block"><h2>Worksheet B</h2><div id="ai-bform">'
+      +AIB.map(s=>`<h3>${esc(s.h)}</h3><div class="f" style="gap:12px">${s.f.map(c=>fx(c,vb[c[0]]||"","data-kb")).join("")}</div>`
+        +(s.h[0]==="2"?'<div class="status" id="ai-bet" style="margin-top:4px"></div>':'')).join("")
+      +'<div class="actions" style="margin-top:12px"><button class="primary" data-bsave="1">Save</button><span class="status" id="ai-bstatus" role="status"></span></div>'
+      +'</div></section>';
+    updateBet();return;
+  }
+
+  // stage A
   if(saved&&!aiEditing){
     el.innerHTML='<section class="block"><div class="notice">You are in. Waiting for the organizers to form groups.</div>'
       +CARD_AI.filter(c=>v[c[0]]).map(c=>`<div style="margin-top:8px"><div class="status">${esc(c[1])}</div><div>${esc(v[c[0]])}</div></div>`).join("")
@@ -47,6 +85,7 @@ function renderAi(){
     +'<div id="ai-form" class="f" style="gap:12px">'+CARD_AI.map(c=>fx(c,v[c[0]]||"","data-k")).join("")
     +'<div class="actions"><button class="primary" data-aisave="1">Save</button><span class="status" id="ai-status" role="status"></span></div></div></section>';
 }
+
 (async()=>{
   const user=await claude.use("user");
   db=await claude.use("db");
@@ -54,7 +93,10 @@ function renderAi(){
   uid=await user.id();
   $("boot").hidden=true;
   $("ai-body").addEventListener("click",aiClick);
+  $("ai-body").addEventListener("change",aiChange);
   try{const s=await db.doc("cards/"+uid).get();if(s.exists)cards=s.data()||{};}catch(e){}
+  try{const pb=await db.doc("plans/ai__"+uid).get();if(pb.exists)planB=pb.data()||{};}catch(e){}
+  try{db.doc("groupsPublished/ai").onSnapshot(s=>{aiGroups=s.exists?s.data():null;renderAi();},()=>{});}catch(e){}
   try{db.doc("stage/ai").onSnapshot(s=>{aiStageReady=true;aiStage=(s.exists&&s.data()&&s.data().stage)||"";renderAi();},()=>{aiStageReady=true;renderAi();});}catch(e){aiStageReady=true;}
   setTimeout(()=>{if(!aiStageReady){aiStageReady=true;renderAi();}},5000);
   renderAi();
