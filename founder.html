@@ -142,7 +142,7 @@ th small{display:block;text-transform:none;letter-spacing:0;white-space:normal;f
       <h1>GTM workshop</h1>
       <p class="sub">Build your pitch, get scored by the room, then work your plan with a small group.</p>
     </div>
-    <div class="tabs" id="fnav" hidden><button data-h="work" aria-selected="true">Worksheets</button><button data-h="rate" aria-selected="false">Rate pitches</button><button data-h="groups" aria-selected="false">My groups</button><button data-h="scores" aria-selected="false">My scores</button><button data-h="ai" aria-selected="false">AI in Business</button></div>
+    <div class="tabs" id="fnav" hidden><button data-h="work" aria-selected="true">Worksheets</button><button data-h="rate" aria-selected="false">Rate pitches</button><button data-h="groups" aria-selected="false">My groups</button><button data-h="scores" aria-selected="false">My scores</button></div>
   </header>
 
   <div id="boot" aria-busy="true" aria-label="Loading" class="block" style="display:grid;gap:12px;margin-top:16px"><div style="height:28px;width:40%;border-radius:8px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div><div style="height:44px;border-radius:10px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div><div style="height:44px;border-radius:10px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div><div style="height:84px;border-radius:10px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div></div><style>@keyframes wsk{from{opacity:.45}to{opacity:1}}</style>
@@ -201,7 +201,6 @@ th small{display:block;text-transform:none;letter-spacing:0;white-space:normal;f
   <div id="view-groups" hidden><div id="groups-body"></div></div>
   <div id="view-work" hidden><div id="work-body"></div></div>
   <div id="view-scores" hidden><div id="scores-body"></div></div>
-  <div id="view-ai" hidden><div id="ai-body"></div></div>
 </div>
 
 <div id="org" hidden>
@@ -213,7 +212,7 @@ th small{display:block;text-transform:none;letter-spacing:0;white-space:normal;f
   <div id="gate" class="notice">Checking access…</div>
   <div id="console" hidden>
     <div id="stage-bar" class="notice" style="margin-bottom:12px"></div>
-    <div class="tabs" id="otabs" style="margin-bottom:16px;width:fit-content"><button data-p="sub" aria-selected="true">Submissions</button><button data-p="run" aria-selected="false">Run sheet</button><button data-p="rounds" aria-selected="false">Pitch rounds</button><button data-p="groups" aria-selected="false">Groups</button><button data-p="gs" aria-selected="false">Group status</button><button data-p="plans" aria-selected="false">Hot-seat plans</button><button data-p="frate" aria-selected="false">Rate pitches</button><button data-p="ba" aria-selected="false">GTM before / after</button><button data-p="sum" aria-selected="false">Room summary</button><button data-p="ai" aria-selected="false">AI in Business</button></div>
+    <div class="tabs" id="otabs" style="margin-bottom:16px;width:fit-content"><button data-p="sub" aria-selected="true">Submissions</button><button data-p="run" aria-selected="false">Run sheet</button><button data-p="rounds" aria-selected="false">Pitch rounds</button><button data-p="groups" aria-selected="false">Groups</button><button data-p="gs" aria-selected="false">Group status</button><button data-p="plans" aria-selected="false">Hot-seat plans</button><button data-p="frate" aria-selected="false">Rate pitches</button><button data-p="ba" aria-selected="false">GTM before / after</button><button data-p="sum" aria-selected="false">Room summary</button></div>
     <div id="p-sub">
     <section class="block" style="margin-bottom:16px">
       <div class="stats" id="stats"></div>
@@ -280,7 +279,6 @@ th small{display:block;text-transform:none;letter-spacing:0;white-space:normal;f
       <div class="actions" style="margin-bottom:12px"><button class="ghost" id="pl-csv">Download CSV</button><button class="ghost" id="pa-csv">Download worksheet A (GTM)</button><span class="status" id="pl-status" role="status"></span></div>
       <div class="tablebox"><table><thead><tr><th>Founder</th><th>Session</th><th>Group</th><th>Status</th><th>Required fields filled</th><th>Goal and plan</th><th>Facilitator checks</th></tr></thead><tbody id="plans-list"></tbody></table></div>
     </div>
-    <div id="p-ai" hidden><div id="ai-admin"></div></div>
   </div>
 </div>
 
@@ -431,7 +429,7 @@ function buildGroups(people,size,seed,session){
 }
 /* ---- pitch rating, results and groups ---- */
 let rounds=[],pr=[],myManifest=null,myVotes={},myResults=null,savedGroups={},pubGroups={},grp=null,gseed=1,orgReady=false,roundsSub=false,rateSig="",rateStarted=false,groupsStarted=false;
-const SES={gtm:"GTM",ai:"AI in Business"};
+const SES={gtm:"GTM"};
 const CRIT=[["clarity","Clarity","Did they show clearly where the business stands?"],["evidence","Evidence","Did they back it up with numbers or proof?"],["next","Next step","Is it clear what they need and what comes next?"]];
 const rid=(fid,s)=>fid+"__"+s;
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
@@ -678,9 +676,9 @@ $("g-csv").addEventListener("click",async()=>{
 });
 $("otabs").addEventListener("click",e=>{
   const b=e.target.closest("button[data-p]");if(!b)return;
-  ["sub","run","rounds","groups","gs","plans","frate","ba","sum","ai"].forEach(p=>{$("p-"+p).hidden=p!==b.dataset.p;});
+  ["sub","run","rounds","groups","gs","plans","frate","ba","sum"].forEach(p=>{$("p-"+p).hidden=p!==b.dataset.p;});
   $("otabs").querySelectorAll("button").forEach(x=>x.setAttribute("aria-selected",x===b));
-  if(b.dataset.p==="frate"){rateSig="";loadRate();renderRate();}if(b.dataset.p==="run")renderRun();if(b.dataset.p==="gs")renderGS();if(b.dataset.p==="groups")renderGroups();if(b.dataset.p==="plans")renderPlans();if(b.dataset.p==="exit")renderExits();if(b.dataset.p==="ba")renderBA();if(b.dataset.p==="sum")renderSum();if(b.dataset.p==="ai")renderAiAdmin();
+  if(b.dataset.p==="frate"){rateSig="";loadRate();renderRate();}if(b.dataset.p==="run")renderRun();if(b.dataset.p==="gs")renderGS();if(b.dataset.p==="groups")renderGroups();if(b.dataset.p==="plans")renderPlans();if(b.dataset.p==="exit")renderExits();if(b.dataset.p==="ba")renderBA();if(b.dataset.p==="sum")renderSum();
 });
 
 let me=null,orgStarted=false;
@@ -689,25 +687,21 @@ function route(){
   const bt=$("boot");if(bt)bt.hidden=true;
   document.querySelector(".wrap").hidden=isOrg;$("org").hidden=!isOrg;
   if(isOrg){if(!orgStarted){orgStarted=true;initOrg(me);}return;}
-  const v=h==="rate"||h==="groups"||h==="work"||h==="scores"||h==="ai"?h:"work";
-  ["mine","rate","groups","work","scores","ai"].forEach(x=>{$("view-"+x).hidden=x!==v;});
+  const v=h==="rate"||h==="groups"||h==="work"||h==="scores"?h:"work";
+  ["mine","rate","groups","work","scores"].forEach(x=>{$("view-"+x).hidden=x!==v;});
   $("fnav").querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",(b.dataset.h||"mine")===v));
   if(!db||!uid)return;
-  if(v==="rate")loadRate();if(v==="groups")loadGroups();if(v==="work")loadWork();if(v==="scores")loadScores();if(v==="ai")loadAi();
+  if(v==="rate")loadRate();if(v==="groups")loadGroups();if(v==="work")loadWork();if(v==="scores")loadScores();
 }
 $("fnav").addEventListener("click",e=>{const b=e.target.closest("button[data-h]");if(b){if(!b.dataset.h){location.href="/manifest";return;}location.hash=b.dataset.h;}});
 window.addEventListener("hashchange",route);
 /* ---- worksheets: problem card, hot-seat plan, facilitator checks ---- */
 let stageB=false,pendingSeat=null,cardsLoaded=false,plans={},cards={},planChecks={},workStarted=false,plansSub=false,openPlan=null,cardSession="gtm",timer={t:0,run:false,id:null};
-const AI_THEMES=["GTM, sales & partnerships","Marketing & brand","Finance & unit economics","Tech, AI & product","Operations","Hiring, team & founder leadership","Customer success"];
 const CARD={
   gtm:[["a_startup","My startup's name","in"],["a_sell","What I sell, in one line, as a customer would say it","in"],["a_how","The way I get customers today is…","ta"],["a_headache","My biggest GTM headache right now","ta"],["a_path","Do I have customers?","sel",null,["I have customers","I don't have customers yet"]],
     ["a_last10","My top 3 sources of customers, and roughly what share each brings","ta","1","One per line: source, share of customers (%), could I do more of it next week (y/n)"],["a_n1","Customers to date","num","1","int"],["a_n5","Leads → paying customers (%)","num","1","pct"],["a_n6","What it costs me to get one customer (₹)","num","1","money"],
     ["a_f_who","Who exactly are my first 100? (role, type of business or person, place)","ta","2"],["a_f_names","Name 3 of them: real people or businesses","ta","2"],["a_f_spoken","How many have I spoken to about the problem?","num","2","int"]],
-  ai:[["ai_tools","Which AI tools do I use today? (e.g. Claude Code, Codex, ChatGPT, Cursor)","in"],
-    ["ai_comfort","How comfortable am I with AI? 1 = barely used it, 3 = use it weekly for a few tasks, 5 = build workflows/agents with it","sel",null,["1","2","3","4","5"]],
-    ["ai_t1","My #1 priority theme (decides my group)","sel",null,AI_THEMES],
-    ["ai_t2","My #2 priority theme (backup if #1 is too small)","sel",null,AI_THEMES]]};
+  ai:[["c1","The startup in one line"],["c2","The task, workflow or tool I want help with"],["c3","Who does it today and how many hours a week"],["c4","Tools I already use for it"],["c5","What good looks like, and who would check it"],["c6","Limits: budget, data, team"]]};
 const STEPS=[[0,3,"Present","Founder reads the problem card. No interruptions."],[3,8,"Questions only","Ask questions. No advice yet."],[8,18,"Build","Fill the plan, starting from the 90-day goal."],[18,22,"Choose","Founder picks the top three actions."],[22,25,"Read back","Founder reads the plan aloud. Check it against the four tests."]];
 const REQ=["goal","b1_what","b1_measure","m1","m2","m3","weekly","fa_what","fa_date","act1","act2","act3","buddy"];
 const CHECKS=[["c1","Goal is a number with a date"],["c2","First action can start tomorrow and has an owner"],["c3","Fits one person's time"],["c4","Names who will help"]];
@@ -1062,66 +1056,6 @@ function gtmSheet(p,members,ro,draft){
     <h3 style="font-size:15px">My 14-day experiment</h3>${F("e_what","What I will do, and how much (for example 50 dms or 20 calls)")}<div class="row">${F("e_start","Start date (within 1 week)","date","start")}${F("e_end","End date","date","end")}</div>${F("e_keep","I will keep going if…")}${F("e_change","I will change course if…")}${F("e_ask","One ask of the cohort: an intro, a skill, a feedback round")}`)}
   ${ro?"":draft?`<div class="actions"><span class="status" id="sheet-status" role="status">Changes save when you leave a field. Worksheet C opens in your hot seat.</span></div>`:`<div class="actions"><button class="primary" data-done="1">Mark hot seat done</button><span class="status" id="sheet-status" role="status">Changes save when you leave a field and show to your group live.</span></div>`}`;
 }
-/* ---- AI in Business (own tab): founder solo Worksheet A, then shared group work in later phases ---- */
-let aiStarted=false,aiStage="",aiStageReady=false,aiEditing=false;
-async function loadAi(){
-  if(!db||!uid)return;
-  if(!aiStarted){
-    aiStarted=true;
-    try{const s=await db.doc("cards/"+uid).get();if(s.exists)cards=Object.assign({},cards,s.data());}catch(e){}
-    $("view-ai").addEventListener("click",aiClick);
-    try{db.doc("stage/ai").onSnapshot(s=>{aiStageReady=true;aiStage=(s.exists&&s.data()&&s.data().stage)||"";renderAi();},()=>{aiStageReady=true;renderAi();});}catch(e){aiStageReady=true;}
-    setTimeout(()=>{if(!aiStageReady){aiStageReady=true;renderAi();}},5000);
-  }
-  renderAi();
-}
-function aiClick(e){
-  if(e.target.closest("[data-aisave]")){saveAiCard();return;}
-  if(e.target.closest("[data-aiedit]")){aiEditing=true;renderAi();return;}
-}
-async function saveAiCard(){
-  const f=$("ai-form");if(!f)return;
-  const v={};f.querySelectorAll("[data-k]").forEach(t=>{v[t.dataset.k]=t.value.trim();});
-  if(!v.ai_t1||!v.ai_t2){setStatus($("ai-status"),"Pick your #1 and #2 priority themes.","err");return;}
-  if(v.ai_t1===v.ai_t2){setStatus($("ai-status"),"Your #2 theme has to be different from your #1.","err");return;}
-  cards=Object.assign({},cards,{ai:v});
-  try{await db.doc("cards/"+uid).set(cards);aiEditing=false;renderAi();}
-  catch(err){setStatus($("ai-status"),"Could not save. Check your connection.","err");}
-}
-function renderAi(){
-  const el=$("ai-body");if(!el)return;
-  if(!aiStageReady){el.innerHTML='<section class="block"><h2>AI in Business</h2><p class="sub">Loading…</p></section>';return;}
-  const v=cards.ai||{},saved=!!(v.ai_t1&&v.ai_t2);
-  if(aiStage!=="a"&&aiStage!=="b"){
-    el.innerHTML='<section class="block"><h2>AI in Business</h2><p class="sub">This session has not started yet. When the organizers open it, your worksheet appears here.</p></section>';return;}
-  if(aiStage==="b"){
-    el.innerHTML='<section class="block"><h2>AI in Business</h2>'+(saved
-      ?'<div class="notice">Worksheet A is closed and groups are being formed. Your group’s Worksheet B opens here shortly.</div>'
-      :'<div class="notice">Worksheet A is closed. You did not save it, so you are not in a group yet — please find an organizer.</div>')+'</section>';return;}
-  if(saved&&!aiEditing){
-    el.innerHTML='<section class="block"><h2>AI in Business</h2><div class="notice">You are in. Waiting for the organizers to form groups.</div>'
-      +CARD.ai.filter(c=>v[c[0]]).map(c=>`<div style="margin-top:8px"><div class="status">${esc(c[1])}</div><div>${esc(v[c[0]])}</div></div>`).join("")
-      +'<div class="actions" style="margin-top:12px"><button class="ghost" data-aiedit="1">Edit my answers</button></div></section>';return;}
-  el.innerHTML='<section class="block"><h2>AI in Business — Worksheet A</h2><p class="sub">About a minute. Pick the themes that matter most; your #1 decides your group.</p>'
-    +'<div id="ai-form" class="f" style="gap:12px">'+CARD.ai.map(c=>fx(c,v[c[0]]||"","data-k")).join("")
-    +'<div class="actions"><button class="primary" data-aisave="1">Save</button><span class="status" id="ai-status" role="status"></span></div></div></section>';
-}
-/* AI in Business: organizer controls (session start + counts; grouping and group views come in later phases) */
-let aiStageDoc=null;
-function renderAiAdmin(){
-  const el=$("ai-admin");if(!el||$("p-ai").hidden)return;
-  const st=(aiStageDoc&&aiStageDoc.stage)||"";
-  const n=(exitsAll||[]).filter(d=>d.ai&&d.ai.ai_t1&&d.ai.ai_t2).length;
-  let ctrl;
-  if(st==="")ctrl='<button class="primary" data-aistage="a">Start the AI in Business session</button><span class="status">Opens Worksheet A for founders.</span>';
-  else if(st==="a")ctrl='<div class="notice"><b>Worksheet A is open.</b> Founders are filling it in. Forming groups comes next.</div>';
-  else ctrl='<div class="notice"><b>Worksheet B is open.</b> Groups are formed.</div><button class="ghost" data-aistage="a">Reopen Worksheet A</button>';
-  el.innerHTML='<section class="block" style="margin-bottom:16px"><h3>AI in Business</h3>'
-    +`<div class="stats" style="margin-bottom:12px"><div class="stat"><b>${n}</b><span>Worksheet A saved (with both themes)</span></div></div>`
-    +'<div class="actions">'+ctrl+'</div></section>';
-}
-document.addEventListener("click",async e=>{const b=e.target.closest("[data-aistage]");if(!b||!db)return;
-  try{await db.doc("stage/ai").set({stage:b.dataset.aistage,at:Date.now()});aiStageDoc={stage:b.dataset.aistage};renderAiAdmin();}catch(err){}});
 /* organizer: GTM before / after report */
 function baScores(){
   const out=[];
@@ -1431,7 +1365,6 @@ async function initOrg(user){
   if(!user||!db||!user.canEdit()){$("gate").textContent="This account is not an organizer. Sign in with an organizer email.";return;}
   $("gate").hidden=true;$("console").hidden=false;
   db.doc("stage/gtm").onSnapshot(s=>{stageDoc=s.exists?s.data():null;renderStage();},()=>{});
-  db.doc("stage/ai").onSnapshot(s=>{aiStageDoc=s.exists?s.data():null;renderAiAdmin();},()=>{});
   if(window.WORKSHOP_MODE==="admin"){myManifest={rosterId:null,name:window.WORKSHOP_FAC||"Facilitator",startup:""};const vr=$("view-rate");$("p-frate").appendChild(vr);vr.hidden=false;}
   if(window.WORKSHOP_MODE==="admin")try{const rs=await db.collection("roster").get();roster=rs.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>a.name.localeCompare(b.name));}catch(e){}
   db.collection("manifest").onSnapshot(s=>{all=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderOrg();renderExits();},()=>{$("rows").innerHTML='<tr><td colspan="8" class="status">Could not load responses.</td></tr>';});
@@ -1442,7 +1375,7 @@ async function initOrg(user){
   db.collection("groups").onSnapshot(s=>{rawSaved={};s.docs.forEach(d=>{rawSaved[d.id]=d.data();});mergeGroups();},()=>{});
   db.collection("groupsPublished").onSnapshot(s=>{rawPub={};s.docs.forEach(d=>{const x=d.data(),gs=x.groups||[];rawPub[d.id]={session:d.id,size:gs[0]?(gs[0].members||[]).length:5,groups:gs.map(g=>({n:g.n,members:(g.members||[]).map(m=>typeof m==="string"?m:m.id)})),published:true};});mergeGroups();},()=>{});
   orgReady=true;subRounds();subPlans();renderRounds();
-  db.collection("cards").onSnapshot(s=>{exitsAll=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderOrg();renderExits();renderRun();renderAiAdmin();},()=>{});
+  db.collection("cards").onSnapshot(s=>{exitsAll=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderOrg();renderExits();renderRun();},()=>{});
   db.collection("groupFacilitators").onSnapshot(s=>{gfac={};s.docs.forEach(d=>{if(d.id==="gtm")gfac=d.data();});renderGS();},()=>{});
   db.collection("planChecks").onSnapshot(s=>{planChecks={};s.docs.forEach(d=>{planChecks[d.id]=d.data();});renderPlans();},()=>{});
 }

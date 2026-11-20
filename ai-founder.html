@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI in Business</title><link rel="stylesheet" href="ai.css"></head>
+<body>
+<div class="wrap">
+  <div style="margin-bottom:16px">
+    <div class="eyebrow">Susegad Camp · build3</div>
+    <h1>AI in Business</h1>
+  </div>
+  <div id="boot" aria-busy="true" aria-label="Loading" class="block" style="display:grid;gap:12px"><div style="height:28px;width:40%;border-radius:8px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div><div style="height:44px;border-radius:10px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div><div style="height:84px;border-radius:10px;background:color-mix(in srgb,currentColor 8%,transparent);animation:wsk 1.2s ease-in-out infinite alternate"></div></div>
+  <div id="ai-body"></div>
+</div>
+<style>@keyframes wsk{from{opacity:.45}to{opacity:1}}</style>
+<script>window.WORKSHOP_MODE="founder";</script>
+<script src="config.js"></script>
+<script src="shim.js"></script>
+<script src="ai.js"></script>
+<script>
+let db=null,uid=null,cards={},aiStage="",aiStageReady=false,aiEditing=false;
+function aiClick(e){
+  if(e.target.closest("[data-aisave]")){saveAiCard();return;}
+  if(e.target.closest("[data-aiedit]")){aiEditing=true;renderAi();return;}
+}
+async function saveAiCard(){
+  const f=$("ai-form");if(!f)return;
+  const v={};f.querySelectorAll("[data-k]").forEach(t=>{v[t.dataset.k]=t.value.trim();});
+  if(!v.ai_t1||!v.ai_t2){setStatus($("ai-status"),"Pick your #1 and #2 priority themes.","err");return;}
+  if(v.ai_t1===v.ai_t2){setStatus($("ai-status"),"Your #2 theme has to be different from your #1.","err");return;}
+  cards=Object.assign({},cards,{ai:v});
+  try{await db.doc("cards/"+uid).set(cards);aiEditing=false;renderAi();}
+  catch(err){setStatus($("ai-status"),"Could not save. Check your connection.","err");}
+}
+function renderAi(){
+  const el=$("ai-body");if(!el)return;
+  if(!aiStageReady){el.innerHTML='<section class="block"><p class="sub">Loading…</p></section>';return;}
+  const v=cards.ai||{},saved=!!(v.ai_t1&&v.ai_t2);
+  if(aiStage!=="a"&&aiStage!=="b"){
+    el.innerHTML='<section class="block"><p class="sub">This session has not started yet. When the organizers open it, your worksheet appears here.</p></section>';return;}
+  if(aiStage==="b"){
+    el.innerHTML='<section class="block">'+(saved
+      ?'<div class="notice">Worksheet A is closed and groups are being formed. Your group’s Worksheet B opens here shortly.</div>'
+      :'<div class="notice">Worksheet A is closed. You did not save it, so you are not in a group yet — please find an organizer.</div>')+'</section>';return;}
+  if(saved&&!aiEditing){
+    el.innerHTML='<section class="block"><div class="notice">You are in. Waiting for the organizers to form groups.</div>'
+      +CARD_AI.filter(c=>v[c[0]]).map(c=>`<div style="margin-top:8px"><div class="status">${esc(c[1])}</div><div>${esc(v[c[0]])}</div></div>`).join("")
+      +'<div class="actions" style="margin-top:12px"><button class="ghost" data-aiedit="1">Edit my answers</button></div></section>';return;}
+  el.innerHTML='<section class="block"><h2>Worksheet A</h2><p class="sub">About a minute. Pick the themes that matter most; your #1 decides your group.</p>'
+    +'<div id="ai-form" class="f" style="gap:12px">'+CARD_AI.map(c=>fx(c,v[c[0]]||"","data-k")).join("")
+    +'<div class="actions"><button class="primary" data-aisave="1">Save</button><span class="status" id="ai-status" role="status"></span></div></div></section>';
+}
+(async()=>{
+  const user=await claude.use("user");
+  db=await claude.use("db");
+  if(!db||!user)return; // shim shows the name picker and reloads once a name is chosen
+  uid=await user.id();
+  $("boot").hidden=true;
+  $("ai-body").addEventListener("click",aiClick);
+  try{const s=await db.doc("cards/"+uid).get();if(s.exists)cards=s.data()||{};}catch(e){}
+  try{db.doc("stage/ai").onSnapshot(s=>{aiStageReady=true;aiStage=(s.exists&&s.data()&&s.data().stage)||"";renderAi();},()=>{aiStageReady=true;renderAi();});}catch(e){aiStageReady=true;}
+  setTimeout(()=>{if(!aiStageReady){aiStageReady=true;renderAi();}},5000);
+  renderAi();
+})();
+</script>
+</body></html>

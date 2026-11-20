@@ -1,0 +1,44 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI in Business — organizers</title><link rel="stylesheet" href="ai.css"></head>
+<body>
+<div class="wrap">
+  <div style="margin-bottom:16px">
+    <div class="eyebrow">Susegad Camp · build3</div>
+    <h1>AI in Business — organizers</h1>
+    <p class="sub">Start the session, form groups and watch progress. Visible to build3 organizers only.</p>
+  </div>
+  <div id="gate" class="notice">Checking access…</div>
+  <div id="console" hidden><div id="ai-admin"></div></div>
+</div>
+<script>window.WORKSHOP_MODE="admin";</script>
+<script src="config.js"></script>
+<script src="shim.js"></script>
+<script src="ai.js"></script>
+<script>
+let db=null,aiStageDoc=null,aiCards=[];
+function renderAiAdmin(){
+  const el=$("ai-admin");if(!el)return;
+  const st=(aiStageDoc&&aiStageDoc.stage)||"";
+  const n=aiCards.filter(d=>d.ai&&d.ai.ai_t1&&d.ai.ai_t2).length;
+  let ctrl;
+  if(st==="")ctrl='<button class="primary" data-aistage="a">Start the AI in Business session</button><span class="status">Opens Worksheet A for founders.</span>';
+  else if(st==="a")ctrl='<div class="notice"><b>Worksheet A is open.</b> Founders are filling it in. Forming groups comes next.</div>';
+  else ctrl='<div class="notice"><b>Worksheet B is open.</b> Groups are formed.</div><button class="ghost" data-aistage="a">Reopen Worksheet A</button>';
+  el.innerHTML='<section class="block" style="margin-bottom:16px"><h3>Session</h3>'
+    +`<div class="stats" style="margin-bottom:12px"><div class="stat"><b>${n}</b><span>Worksheet A saved (with both themes)</span></div></div>`
+    +'<div class="actions">'+ctrl+'</div></section>';
+}
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-aistage]");if(!b||!db)return;
+  try{await db.doc("stage/ai").set({stage:b.dataset.aistage,at:Date.now()});aiStageDoc={stage:b.dataset.aistage};renderAiAdmin();}catch(err){}});
+(async()=>{
+  const user=await claude.use("user");
+  db=await claude.use("db");
+  if(!db||!user)return; // shim shows the organizer sign-in and reloads on success
+  if(!user.canEdit()){$("gate").textContent="This account is not an organizer. Sign in with an organizer email.";return;}
+  $("gate").hidden=true;$("console").hidden=false;
+  db.doc("stage/ai").onSnapshot(s=>{aiStageDoc=s.exists?s.data():null;renderAiAdmin();},()=>{});
+  db.collection("cards").onSnapshot(s=>{aiCards=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderAiAdmin();},()=>{});
+  renderAiAdmin();
+})();
+</script>
+</body></html>
