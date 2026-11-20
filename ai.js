@@ -21,7 +21,8 @@ function fx(c,v,attr){
 }
 
 // The seven themes. A founder's #1 theme decides their group; #2 is the fallback.
-const AI_THEMES=["GTM, sales & partnerships","Marketing & brand","Finance & unit economics","Tech, AI & product","Operations","Hiring, team & founder leadership","Customer success"];
+// Named by the founders themselves (pre-camp input), ordered by how many raised each.
+const AI_THEMES=["Marketing & content","Sales & lead gen","Hiring & team","Ops & admin","Finance & accounting","Product & tech","Customer support & retention"];
 
 // Worksheet A (solo). Saved to cards/{founderId}.ai. Eligible for grouping = ai_t1 AND ai_t2 set.
 const CARD_AI=[
