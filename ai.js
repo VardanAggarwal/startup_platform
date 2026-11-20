@@ -57,6 +57,31 @@ const AIB=[
 const BKEYS=AIB.reduce((a,s)=>a.concat(s.f.map(c=>c[0])),[]);
 // impact ÷ effort, higher is a better bet. Returns "" when either side is missing.
 const aiBet=(imp,eff)=>{const i=+imp,e=+eff;return i&&e?(i/e).toFixed(2):"";};
+// Which option the founder is going with (explicit pick, else the better bet, else A).
+function aiPickText(vb){
+  if(vb.ai_pick==="Option A")return vb.ai_s1||"";
+  if(vb.ai_pick==="Option B")return vb.ai_s2||"";
+  const a=aiBet(vb.ai_s1_imp,vb.ai_s1_eff),b=aiBet(vb.ai_s2_imp,vb.ai_s2_eff);
+  if(a&&b)return(+a>=+b)?(vb.ai_s1||""):(vb.ai_s2||"");
+  return vb.ai_s1||vb.ai_s2||"";
+}
+// Build the whole ~1-minute pitch from the founder's own B answers. No filler.
+// Skips empty fields; returns "" if there is nothing to say yet.
+function buildAiPitch(vb){
+  vb=vb||{};const trim=s=>String(s||"").trim().replace(/\s+/g," ").replace(/\.*$/,"");
+  const L=[];
+  const ps=trim(vb.ai_ps);
+  if(ps)L.push("The problem: "+ps+".");
+  const ctx=[];
+  if(trim(vb.ai_who))ctx.push("It hits "+trim(vb.ai_who).replace(/^it hits /i,""));
+  if(trim(vb.ai_cost))ctx.push("costs about "+trim(vb.ai_cost).replace(/^costs? (about )?/i,""));
+  if(ctx.length)L.push(ctx.join(", ")+" today.");
+  const pick=trim(aiPickText(vb));
+  if(pick)L.push("My AI move: "+pick+".");
+  if(trim(vb.ai_step))L.push("First step: "+trim(vb.ai_step)+".");
+  if(trim(vb.ai_delta))L.push("In 30 days: "+trim(vb.ai_delta)+".");
+  return L.join("\n");
+}
 
 // --- Grouping (Phase 2) -----------------------------------------------------
 // Deterministic: same answers in -> same groups out. Tie-break by founder id.

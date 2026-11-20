@@ -21,6 +21,19 @@ function aiClick(e){
   if(e.target.closest("[data-aisave]")){saveAiCard();return;}
   if(e.target.closest("[data-aiedit]")){aiEditing=true;renderAi();return;}
   if(e.target.closest("[data-bsave]")){saveB();return;}
+  if(e.target.closest("[data-pitch]")){showPitch();return;}
+  if(e.target.closest("[data-pcopy]")){const t=$("ai-pitchtext"),st=$("ai-pcopy");
+    if(navigator.clipboard&&t)navigator.clipboard.writeText(t.textContent).then(()=>setStatus(st,"Copied.","ok"),()=>setStatus(st,"Copy failed. Select the text and copy it.","err"));return;}
+}
+function showPitch(){
+  const el=$("ai-pitch");if(!el)return;
+  const txt=buildAiPitch(readBForm());
+  if(!txt){el.innerHTML='<section class="block"><div class="notice">Fill in at least your problem and your AI options, then build your pitch.</div></section>';return;}
+  el.innerHTML='<section class="block" style="margin-top:12px"><h3 style="margin-top:0">Your 1-minute pitch</h3>'
+    +'<p class="sub">Built from your answers. Read it out as is, or tweak your sheet and build again.</p>'
+    +`<pre id="ai-pitchtext" style="white-space:pre-wrap;font:inherit;font-size:17px;line-height:1.6;margin:0 0 12px">${esc(txt)}</pre>`
+    +'<div class="actions"><button class="ghost" data-pcopy="1">Copy</button><span class="status" id="ai-pcopy" role="status"></span></div></section>';
+  el.scrollIntoView({behavior:"smooth",block:"start"});
 }
 function aiChange(e){if(e.target.closest("[data-kb]"))updateBet();}
 
@@ -48,7 +61,7 @@ function updateBet(){
 }
 async function saveB(){
   const v=readBForm();
-  try{await db.doc("plans/ai__"+uid).set(Object.assign({session:"ai",founderId:uid,at:Date.now()},v));planB=v;setStatus($("ai-bstatus"),"Saved. Keep editing any time.","ok");}
+  try{await db.doc("plans/ai__"+uid).set(Object.assign({session:"ai",founderId:uid,at:Date.now()},v));planB=v;renderAi();setStatus($("ai-bstatus"),"Saved. Build your pitch when ready.","ok");}
   catch(err){setStatus($("ai-bstatus"),"Could not save. Check your connection.","err");}
 }
 
@@ -71,8 +84,10 @@ function renderAi(){
       +'<section class="block"><h2>Worksheet B</h2><div id="ai-bform">'
       +AIB.map(s=>`<h3>${esc(s.h)}</h3><div class="f" style="gap:12px">${s.f.map(c=>fx(c,vb[c[0]]||"","data-kb")).join("")}</div>`
         +(s.h[0]==="2"?'<div class="status" id="ai-bet" style="margin-top:4px"></div>':'')).join("")
-      +'<div class="actions" style="margin-top:12px"><button class="primary" data-bsave="1">Save</button><span class="status" id="ai-bstatus" role="status"></span></div>'
-      +'</div></section>';
+      +'<div class="actions" style="margin-top:12px"><button class="primary" data-bsave="1">Save</button>'
+      +(BKEYS.some(k=>vb[k])?'<button class="ghost" data-pitch="1">Build my pitch</button>':'')
+      +'<span class="status" id="ai-bstatus" role="status"></span></div>'
+      +'</div></section><div id="ai-pitch"></div>';
     updateBet();return;
   }
 
@@ -91,7 +106,7 @@ function renderAi(){
   db=await claude.use("db");
   if(!db||!user)return; // shim shows the name picker and reloads once a name is chosen
   uid=await user.id();
-  $("boot").hidden=true;
+  $("boot").style.display="none"; // inline display:grid beats the hidden attribute
   $("ai-body").addEventListener("click",aiClick);
   $("ai-body").addEventListener("change",aiChange);
   try{const s=await db.doc("cards/"+uid).get();if(s.exists)cards=s.data()||{};}catch(e){}
