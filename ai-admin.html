@@ -1,0 +1,158 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI in Business — organizers</title><link rel="stylesheet" href="ai.css">
+<style>.wrap{max-width:1400px}.aigrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px;align-items:start;margin-bottom:12px}.aigrid>.block{margin:0!important}</style></head>
+<body>
+<div class="wrap">
+  <div style="margin-bottom:16px">
+    <div class="eyebrow">Susegad Camp · build3</div>
+    <h1>AI in Business — organizers</h1>
+    <p class="sub">Start the session, form groups and watch progress. Visible to build3 organizers only.</p>
+  </div>
+  <div id="gate" class="notice">Checking access…</div>
+  <div id="console" hidden><div id="ai-admin"></div></div>
+</div>
+<script>window.WORKSHOP_MODE="admin";</script>
+<script src="config.js"></script>
+<script src="shim.js"></script>
+<script src="ai.js"></script>
+<script>
+let db=null,aiStageDoc=null,aiGroupsDoc=null,aiCards=[],roster=[],rosterMap={},aiSheets={};
+const bFilled=b=>!!b&&BKEYS.some(k=>String(b[k]||"").trim());
+// Read-only view of one group's shared Worksheet B + the pitch built from it.
+function bView(g){
+  const gid=aiGid(g),b=aiSheets[gid],ed=b&&b.editor&&b.editor.id?b.editor:null;
+  const who=ed?` · editor: <b>${esc(ed.name||nameOf(ed.id))}</b>`:` · no editor`;
+  if(!bFilled(b))return `<div style="margin:8px 0"><span class="status">Worksheet B: not started${who}</span></div>`;
+  const rows=AIB.map(s=>s.f.filter(c=>String(b[c[0]]||"").trim())
+    .map(c=>`<div style="margin-top:4px"><span class="status">${esc(c[1])}</span><div>${esc(b[c[0]])}</div></div>`).join("")).join("");
+  const p=buildAiPitch(b);
+  return `<details data-fid="${esc(gid)}" style="margin:8px 0"><summary><span class="status ok">Worksheet B: filled</span><span class="status">${who}</span></summary>`
+    +`<div style="padding:8px 0 0 12px">${rows}`
+    +(p?`<div class="notice" style="margin-top:8px"><b>Pitch</b><pre style="white-space:pre-wrap;font:inherit;margin:4px 0 0">${esc(p)}</pre></div>`:"")
+    +`</div></details>`;
+}
+const nameOf=id=>(rosterMap[id]&&rosterMap[id].name)||id;
+const cardOf=id=>{const d=aiCards.find(x=>x.id===id);return d&&d.ai||{};};
+// Founders who saved Worksheet A (both themes) — eligible for grouping.
+const eligible=()=>aiCards.filter(d=>d.ai&&d.ai.ai_t1&&d.ai.ai_t2)
+  .map(d=>({id:d.id,name:nameOf(d.id),t1:d.ai.ai_t1,t2:d.ai.ai_t2}));
+
+async function saveGroups(groups){
+  groups.forEach((g,i)=>g.n=i+1);
+  aiGroupsDoc={session:"ai",groups,at:Date.now()};
+  await db.doc("groupsPublished/ai").set(aiGroupsDoc);
+}
+// Drop empties, renumber.
+const tidy=groups=>groups.filter(g=>g.members&&g.members.length).map((g,i)=>({n:i+1,gid:aiGid(g),theme:g.theme,members:g.members}));
+
+function moveSelect(fid,curN,groups){
+  const opts=groups.filter(g=>g.n!==curN)
+    .map(g=>`<option value="g${g.n}">→ Group ${g.n}${g.members.length>=AI_MAX?" (full)":""}</option>`).join("");
+  return `<select class="aimove" data-move="${esc(fid)}" aria-label="Move ${esc(nameOf(fid))}">`
+    +`<option value="">Move…</option>${opts}<option value="new">→ New group</option>`
+    +(curN?`<option value="out">Remove from groups</option>`:"")+`</select>`;
+}
+function groupCard(g,groups){
+  const over=g.members.length>AI_MAX;
+  const rows=g.members.map(m=>{
+    const t1=(cardOf(m.id).ai_t1)||"",off=t1&&t1!==g.theme?` · wants ${esc(t1)}`:"";
+    return `<div class="actions" style="justify-content:space-between;gap:8px;margin:6px 0">`
+      +`<div><b>${esc(m.name||nameOf(m.id))}</b><span class="status">#${g.n} theme${off}</span></div>`
+      +moveSelect(m.id,g.n,groups)+`</div>`;
+  }).join("");
+  return `<section class="block" style="margin-bottom:12px">`
+    +`<h3 style="margin:0 0 4px">Group ${g.n} · ${esc(g.theme)} `
+    +`<span class="status${over?" err":""}">${g.members.length}/${AI_MAX}${over?" — move one out":""}</span></h3>`
+    +rows
+    +`<div style="margin-top:10px;border-top:1px solid color-mix(in srgb,currentColor 15%,transparent);padding-top:8px">`
+    +bView(g)+`</div></section>`;
+}
+function previewCard(g){
+  return `<div class="notice" style="margin-bottom:8px"><b>Group ${g.n} · ${esc(g.theme)}</b> (${g.members.length})<br>`
+    +g.members.map(m=>esc(m.name||nameOf(m.id))).join(", ")+`</div>`;
+}
+
+function renderAiAdmin(){
+  const el=$("ai-admin");if(!el)return;
+  const st=(aiStageDoc&&aiStageDoc.stage)||"",elig=eligible(),n=elig.length;
+  let html="";
+  if(st===""){
+    html=`<section class="block"><h3>Session not started</h3>`
+      +`<p class="sub">Opening the session shows Worksheet A to founders.</p>`
+      +`<div class="actions"><button class="primary" data-aistage="a">Start the AI in Business session</button></div></section>`;
+  }else if(st==="a"){
+    const prev=buildAiGroups(elig);
+    html=`<section class="block" style="margin-bottom:12px"><h3>Worksheet A is open</h3>`
+      +`<div class="stats" style="margin:8px 0"><div class="stat"><b>${n}</b><span>saved Worksheet A (both themes)</span></div>`
+      +`<div class="stat"><b>${prev.length}</b><span>groups this would form</span></div></div>`
+      +`<div class="actions"><button class="primary" data-aiform="1"${n<2?" disabled":""}>Form groups &amp; start Worksheet B</button>`
+      +(n<2?`<span class="status">Need at least 2 saved to form groups.</span>`:`<span class="status">Preview below. You can move people after.</span>`)
+      +`</div></section>`;
+    if(prev.length)html+=`<section class="block"><h3 style="margin-top:0">Preview</h3><div class="aigrid">`+prev.map(previewCard).join("")+`</div></section>`;
+  }else{ // st==="b"
+    const groups=(aiGroupsDoc&&aiGroupsDoc.groups)||[];
+    const assigned=new Set();groups.forEach(g=>g.members.forEach(m=>assigned.add(m.id)));
+    const unassigned=elig.filter(p=>!assigned.has(p.id));
+    html=`<section class="block" style="margin-bottom:12px"><h3 style="margin-top:0">Worksheet B is open</h3>`
+      +`<p class="sub">Groups are live. Move people with the dropdowns; changes save instantly.</p>`
+      +`<div class="stats" style="margin:8px 0"><div class="stat"><b>${groups.length}</b><span>groups</span></div>`
+      +`<div class="stat"><b>${groups.filter(g=>bFilled(aiSheets[aiGid(g)])).length}/${groups.length}</b><span>group sheets started</span></div></div>`
+      +`<div class="actions"><button class="ghost" data-aireform="1">Re-form from current answers</button>`
+      +`<button class="ghost" data-aistage="a">Reopen Worksheet A</button></div></section>`;
+    html+=`<div class="aigrid">`+groups.map(g=>groupCard(g,groups)).join("")+`</div>`;
+    if(unassigned.length){
+      html+=`<section class="block" style="margin-bottom:12px"><h3 style="margin-top:0">Not in a group (${unassigned.length})</h3>`
+        +`<p class="sub">Founders who saved Worksheet A after groups were formed.</p>`
+        +unassigned.map(p=>`<div class="actions" style="justify-content:space-between;margin:6px 0"><b>${esc(p.name)}</b>`
+          +moveSelect(p.id,0,groups)+`</div>`).join("")+`</section>`;
+    }
+  }
+  const open=new Set([...el.querySelectorAll("details[open][data-fid]")].map(d=>d.dataset.fid));
+  el.innerHTML=html;
+  open.forEach(id=>{const d=el.querySelector(`details[data-fid="${CSS.escape(id)}"]`);if(d)d.open=true;});
+}
+
+// Stage controls (start / reopen).
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-aistage]");if(!b||!db)return;
+  try{await db.doc("stage/ai").set({stage:b.dataset.aistage,at:Date.now()});aiStageDoc={stage:b.dataset.aistage};renderAiAdmin();}catch(err){}
+});
+// Form groups & start Worksheet B.
+document.addEventListener("click",async e=>{
+  if(!e.target.closest("[data-aiform]")||!db)return;
+  try{await saveGroups(buildAiGroups(eligible()));await db.doc("stage/ai").set({stage:"b",at:Date.now()});aiStageDoc={stage:"b"};renderAiAdmin();}catch(err){}
+});
+// Re-form (discards manual moves).
+document.addEventListener("click",async e=>{
+  if(!e.target.closest("[data-aireform]")||!db)return;
+  if(!window.confirm("Re-form every group from the saved answers? This discards any manual moves."))return;
+  try{await saveGroups(buildAiGroups(eligible()));renderAiAdmin();}catch(err){}
+});
+// Move a founder between groups.
+document.addEventListener("change",async e=>{
+  const sel=e.target.closest(".aimove");if(!sel||!db)return;
+  const fid=sel.dataset.move,to=sel.value;if(!to)return;
+  let groups=((aiGroupsDoc&&aiGroupsDoc.groups)||[]).map(g=>({n:g.n,gid:aiGid(g),theme:g.theme,members:g.members.slice()}));
+  const p=eligible().find(x=>x.id===fid)||{id:fid,name:nameOf(fid),t1:""};
+  groups.forEach(g=>{g.members=g.members.filter(m=>m.id!==fid);});
+  if(to==="new"){const th=p.t1||"Mixed themes";groups.push({gid:aiSlug(th)+"-x"+Date.now().toString(36),theme:th,members:[{id:fid,name:p.name}]});}
+  else if(to[0]==="g"){const g=groups[parseInt(to.slice(1),10)-1];if(g)g.members.push({id:fid,name:p.name});}
+  // to==="out" -> just removed (becomes unassigned)
+  try{await saveGroups(tidy(groups));renderAiAdmin();}catch(err){renderAiAdmin();}
+});
+
+(async()=>{
+  const user=await claude.use("user");
+  db=await claude.use("db");
+  if(!db||!user)return; // shim shows the organizer sign-in and reloads on success
+  if(!user.canEdit()){$("gate").textContent="This account is not an organizer. Sign in with an organizer email.";return;}
+  $("gate").hidden=true;$("console").hidden=false;
+  try{const rs=await db.collection("roster").get();roster=rs.docs.map(d=>Object.assign({id:d.id},d.data()));roster.forEach(r=>rosterMap[r.id]=r);}catch(e){}
+  db.doc("stage/ai").onSnapshot(s=>{aiStageDoc=s.exists?s.data():null;renderAiAdmin();},()=>{});
+  db.doc("groupsPublished/ai").onSnapshot(s=>{aiGroupsDoc=s.exists?s.data():null;renderAiAdmin();},()=>{});
+  db.collection("plans").onSnapshot(s=>{aiSheets={};s.docs.forEach(d=>{if(d.id.indexOf("ai__g_")===0)aiSheets[d.id.slice(6)]=d.data();});renderAiAdmin();},()=>{});
+  db.collection("cards").onSnapshot(s=>{aiCards=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderAiAdmin();},()=>{});
+  renderAiAdmin();
+})();
+</script>
+</body></html>
