@@ -15,12 +15,16 @@
 <script src="shim.js"></script>
 <script src="ai.js"></script>
 <script>
-let db=null,uid=null,cards={},aiStage="",aiStageReady=false,aiEditing=false,aiGroups=null,planB={};
+let db=null,uid=null,cards={},aiStage="",aiStageReady=false,aiEditing=false,aiGroups=null;
+// Group Worksheet B: one shared doc per group, live for everyone in it.
+let sheet=null,sheetPath=null,sheetUnsub=null,sheetTimer=null;
 
 function aiClick(e){
   if(e.target.closest("[data-aisave]")){saveAiCard();return;}
   if(e.target.closest("[data-aiedit]")){aiEditing=true;renderAi();return;}
-  if(e.target.closest("[data-bsave]")){saveB();return;}
+  const c=e.target.closest("[data-claim]");if(c){claimEditor(c.dataset.claim==="take");return;}
+  if(e.target.closest("[data-release]")){releaseEditor();return;}
+  if(e.target.closest("[data-bsave]")){saveSheet(true);return;}
   if(e.target.closest("[data-pitch]")){showPitch();return;}
   if(e.target.closest("[data-pcopy]")){const t=$("ai-pitchtext"),st=$("ai-pcopy");
     if(navigator.clipboard&&t)navigator.clipboard.writeText(t.textContent).then(()=>setStatus(st,"Copied.","ok"),()=>setStatus(st,"Copy failed. Select the text and copy it.","err"));return;}
@@ -28,14 +32,21 @@ function aiClick(e){
 function showPitch(){
   const el=$("ai-pitch");if(!el)return;
   const txt=buildAiPitch(readBForm());
-  if(!txt){el.innerHTML='<section class="block"><div class="notice">Fill in at least your problem and your AI options, then build your pitch.</div></section>';return;}
-  el.innerHTML='<section class="block" style="margin-top:12px"><h3 style="margin-top:0">Your 1-minute pitch</h3>'
-    +'<p class="sub">Built from your answers. Read it out as is, or tweak your sheet and build again.</p>'
+  if(!txt){el.innerHTML='<section class="block"><div class="notice">Fill in at least the problem and your AI options, then build the pitch.</div></section>';return;}
+  el.innerHTML='<section class="block" style="margin-top:12px"><h3 style="margin-top:0">Your group\'s 1-minute pitch</h3>'
+    +'<p class="sub">Built from the group sheet. Whoever pitches can read it out as is.</p>'
     +`<pre id="ai-pitchtext" style="white-space:pre-wrap;font:inherit;font-size:17px;line-height:1.6;margin:0 0 12px">${esc(txt)}</pre>`
     +'<div class="actions"><button class="ghost" data-pcopy="1">Copy</button><span class="status" id="ai-pcopy" role="status"></span></div></section>';
   el.scrollIntoView({behavior:"smooth",block:"start"});
 }
-function aiChange(e){if(e.target.closest("[data-kb]"))updateBet();}
+// Editor typing: show the bet, autosave 1.5 s after the last change.
+function aiInput(e){
+  if(!e.target.closest("[data-kb]"))return;
+  updateBet();
+  if(!amEditor())return;
+  setStatus($("ai-bstatus"),"Saving…");
+  clearTimeout(sheetTimer);sheetTimer=setTimeout(()=>saveSheet(false),1500);
+}
 
 // ---- Worksheet A (solo) ----
 async function saveAiCard(){
@@ -48,8 +59,10 @@ async function saveAiCard(){
   catch(err){setStatus($("ai-status"),"Could not save. Check your connection.","err");}
 }
 
-// ---- Worksheet B (per founder, private) ----
+// ---- Worksheet B (one per group, one editor at a time) ----
 const myGroup=()=>((aiGroups&&aiGroups.groups)||[]).find(g=>(g.members||[]).some(m=>m.id===uid))||null;
+const myName=()=>{const g=myGroup(),m=g&&g.members.find(x=>x.id===uid);return(m&&m.name)||"A member";};
+const amEditor=()=>!!(sheet&&sheet.editor&&sheet.editor.id===uid);
 function readBForm(){const v={},f=$("ai-bform");if(f)f.querySelectorAll("[data-kb]").forEach(t=>{v[t.dataset.kb]=t.value.trim();});return v;}
 function updateBet(){
   const el=$("ai-bet");if(!el)return;const v=readBForm();
@@ -59,10 +72,57 @@ function updateBet(){
   let tip="";if(a&&b)tip=" — "+(+a>+b?"Option A is the better bet":+b>+a?"Option B is the better bet":"a toss-up");
   el.textContent="Impact ÷ effort (higher = better bet): "+parts.join(" · ")+tip;
 }
-async function saveB(){
-  const v=readBForm();
-  try{await db.doc("plans/ai__"+uid).set(Object.assign({session:"ai",founderId:uid,at:Date.now()},v));planB=v;renderAi();setStatus($("ai-bstatus"),"Saved. Build your pitch when ready.","ok");}
-  catch(err){setStatus($("ai-bstatus"),"Could not save. Check your connection.","err");}
+// Follow my group's sheet. Called whenever groups or stage change.
+function followSheet(){
+  const g=aiStage==="b"?myGroup():null,path=g?aiSheetId(g):null;
+  if(path===sheetPath)return;
+  if(sheetUnsub){try{sheetUnsub();}catch(e){}}
+  clearTimeout(sheetTimer);sheetUnsub=null;sheetPath=path;sheet=null;
+  if(!path)return;
+  sheetUnsub=db.doc(path).onSnapshot(s=>{
+    if(path!==sheetPath)return;
+    const wasMine=amEditor();sheet=(s.exists&&s.data())||{};
+    // I am still typing: keep my form as is (my own saves echo back here).
+    if(wasMine&&amEditor()&&$("ai-bform")){return;}
+    renderAi();
+  },()=>{if(path===sheetPath){sheet=sheet||{};renderAi();}});
+}
+async function freshSheet(){const s=await db.doc(sheetPath).get();return(s.exists&&s.data())||{};}
+async function claimEditor(take){
+  const g=myGroup();if(!g||!sheetPath)return;
+  if(take&&!window.confirm(`${(sheet&&sheet.editor&&sheet.editor.name)||"Someone"} is editing. Take over? Anything they have not saved yet is lost.`))return;
+  try{
+    const cur=await freshSheet();
+    if(!take&&cur.editor&&cur.editor.id&&cur.editor.id!==uid){sheet=cur;renderAi();setStatus($("ai-bstatus"),cur.editor.name+" just became the editor.","err");return;}
+    const nd=Object.assign({},cur,{session:"ai",gid:aiGid(g),n:g.n,theme:g.theme,editor:{id:uid,name:myName(),at:Date.now()},at:Date.now()});
+    await db.doc(sheetPath).set(nd);sheet=nd;renderAi();setStatus($("ai-bstatus"),"You are the editor. Changes save automatically.","ok");
+  }catch(err){setStatus($("ai-bstatus"),"Could not claim. Check your connection.","err");}
+}
+// Save the form. Refuses if someone else took over since.
+async function saveSheet(manual){
+  clearTimeout(sheetTimer);
+  if(!amEditor()||!$("ai-bform"))return false;
+  const v=readBForm(),path=sheetPath;
+  try{
+    const cur=await freshSheet();
+    if(path!==sheetPath)return false;
+    if(!cur.editor||cur.editor.id!==uid){sheet=cur;renderAi();
+      setStatus($("ai-bstatus"),(cur.editor?cur.editor.name+" took over editing":"Editing was released")+". Your last change was not saved.","err");return false;}
+    const nd=Object.assign({},cur,v,{at:Date.now()});
+    await db.doc(path).set(nd);sheet=nd;
+    if(manual)renderAi();
+    setStatus($("ai-bstatus"),manual?"Saved. Build your pitch when ready.":"Saved.","ok");
+    const st=$("ai-bstatus");
+    if(!$("ai-pitchbtn")&&st&&BKEYS.some(k=>v[k]))st.insertAdjacentHTML("beforebegin",'<button class="ghost" id="ai-pitchbtn" data-pitch="1">Build our pitch</button>');
+    return true;
+  }catch(err){setStatus($("ai-bstatus"),"Could not save. Check your connection.","err");return false;}
+}
+async function releaseEditor(){
+  if(!amEditor())return;
+  if(!(await saveSheet(false))&&!amEditor())return;
+  try{const cur=await freshSheet();if(cur.editor&&cur.editor.id!==uid){sheet=cur;renderAi();return;}
+    const nd=Object.assign({},cur,{editor:null,at:Date.now()});await db.doc(sheetPath).set(nd);sheet=nd;renderAi();}
+  catch(err){setStatus($("ai-bstatus"),"Could not release. Check your connection.","err");}
 }
 
 function renderAi(){
@@ -77,17 +137,31 @@ function renderAi(){
     const g=myGroup();
     if(!g){el.innerHTML='<section class="block"><div class="notice">Groups are formed but you are not placed yet. Find an organizer and they will add you.</div></section>';return;}
     const members=(g.members||[]).map(m=>m.id===uid?`<b>${esc(m.name||"You")} (you)</b>`:esc(m.name||m.id)).join(", ");
-    const vb=planB||{};
-    el.innerHTML='<section class="block" style="margin-bottom:12px">'
+    let html='<section class="block" style="margin-bottom:12px">'
       +`<div class="notice"><b>Your group · Group ${g.n} — ${esc(g.theme)}</b><br>${members}</div>`
-      +'<p class="sub">Your group decides between you who pitches at the end (about a minute, no scoring). Everyone fills their own sheet below — it stays private to you.</p></section>'
-      +'<section class="block"><h2>Worksheet B</h2><div id="ai-bform">'
+      +'<p class="sub">Your group fills one sheet together. One person types (the editor); everyone else sees it live. Your group decides who pitches at the end (about a minute, no scoring).</p></section>';
+    if(!sheet){el.innerHTML=html+'<section class="block"><p class="sub">Loading your group\'s sheet…</p></section>';return;}
+    const mine=amEditor(),ed=sheet.editor&&sheet.editor.id?sheet.editor:null;
+    // Keep unsaved typing if this re-render happens mid-edit (e.g. an organizer moved someone).
+    const vb=Object.assign({},sheet,mine&&$("ai-bform")?readBForm():{});
+    let bar;
+    if(mine)bar='<div class="notice"><b>You are the editor.</b> Changes save automatically.</div>'
+      +'<div class="actions" style="margin-top:8px"><button class="ghost" data-release="1">Stop editing</button></div>';
+    else if(ed)bar=`<div class="notice"><b>${esc(ed.name||"A member")}</b> is editing. You see their changes live.</div>`
+      +'<div class="actions" style="margin-top:8px"><button class="ghost" data-claim="take">Take over</button></div>';
+    else bar='<div class="notice">Nobody is editing yet. Pick one person to type for the group.</div>'
+      +'<div class="actions" style="margin-top:8px"><button class="primary" data-claim="1">I\'m the editor</button></div>';
+    html+='<section class="block"><h2>Worksheet B · Group '+g.n+'</h2>'+bar
+      +`<div id="ai-bform"${mine?"":' data-ro="1"'} style="margin-top:12px">`
       +AIB.map(s=>`<h3>${esc(s.h)}</h3><div class="f" style="gap:12px">${s.f.map(c=>fx(c,vb[c[0]]||"","data-kb")).join("")}</div>`
         +(s.h[0]==="2"?'<div class="status" id="ai-bet" style="margin-top:4px"></div>':'')).join("")
-      +'<div class="actions" style="margin-top:12px"><button class="primary" data-bsave="1">Save</button>'
-      +(BKEYS.some(k=>vb[k])?'<button class="ghost" data-pitch="1">Build my pitch</button>':'')
+      +'<div class="actions" style="margin-top:12px">'
+      +(mine?'<button class="primary" data-bsave="1">Save</button>':'')
+      +(BKEYS.some(k=>vb[k])?'<button class="ghost" id="ai-pitchbtn" data-pitch="1">Build our pitch</button>':'')
       +'<span class="status" id="ai-bstatus" role="status"></span></div>'
       +'</div></section><div id="ai-pitch"></div>';
+    el.innerHTML=html;
+    if(!mine)$("ai-bform").querySelectorAll("[data-kb]").forEach(t=>{t.disabled=true;});
     updateBet();return;
   }
 
@@ -108,11 +182,11 @@ function renderAi(){
   uid=await user.id();
   $("boot").style.display="none"; // inline display:grid beats the hidden attribute
   $("ai-body").addEventListener("click",aiClick);
-  $("ai-body").addEventListener("change",aiChange);
+  $("ai-body").addEventListener("input",aiInput);
+  $("ai-body").addEventListener("change",aiInput);
   try{const s=await db.doc("cards/"+uid).get();if(s.exists)cards=s.data()||{};}catch(e){}
-  try{const pb=await db.doc("plans/ai__"+uid).get();if(pb.exists)planB=pb.data()||{};}catch(e){}
-  try{db.doc("groupsPublished/ai").onSnapshot(s=>{aiGroups=s.exists?s.data():null;renderAi();},()=>{});}catch(e){}
-  try{db.doc("stage/ai").onSnapshot(s=>{aiStageReady=true;aiStage=(s.exists&&s.data()&&s.data().stage)||"";renderAi();},()=>{aiStageReady=true;renderAi();});}catch(e){aiStageReady=true;}
+  try{db.doc("groupsPublished/ai").onSnapshot(s=>{aiGroups=s.exists?s.data():null;followSheet();renderAi();},()=>{});}catch(e){}
+  try{db.doc("stage/ai").onSnapshot(s=>{aiStageReady=true;aiStage=(s.exists&&s.data()&&s.data().stage)||"";followSheet();renderAi();},()=>{aiStageReady=true;renderAi();});}catch(e){aiStageReady=true;}
   setTimeout(()=>{if(!aiStageReady){aiStageReady=true;renderAi();}},5000);
   renderAi();
 })();

@@ -16,16 +16,17 @@
 <script src="shim.js"></script>
 <script src="ai.js"></script>
 <script>
-let db=null,aiStageDoc=null,aiGroupsDoc=null,aiCards=[],roster=[],rosterMap={},aiPlans={};
+let db=null,aiStageDoc=null,aiGroupsDoc=null,aiCards=[],roster=[],rosterMap={},aiSheets={};
 const bFilled=b=>!!b&&BKEYS.some(k=>String(b[k]||"").trim());
-// Read-only view of one founder's Worksheet B + the pitch built from it.
-function bView(m){
-  const b=aiPlans[m.id];
-  if(!bFilled(b))return `<div style="margin:8px 0"><b>${esc(m.name||nameOf(m.id))}</b> <span class="status">not started</span></div>`;
+// Read-only view of one group's shared Worksheet B + the pitch built from it.
+function bView(g){
+  const gid=aiGid(g),b=aiSheets[gid],ed=b&&b.editor&&b.editor.id?b.editor:null;
+  const who=ed?` · editor: <b>${esc(ed.name||nameOf(ed.id))}</b>`:` · no editor`;
+  if(!bFilled(b))return `<div style="margin:8px 0"><span class="status">Worksheet B: not started${who}</span></div>`;
   const rows=AIB.map(s=>s.f.filter(c=>String(b[c[0]]||"").trim())
     .map(c=>`<div style="margin-top:4px"><span class="status">${esc(c[1])}</span><div>${esc(b[c[0]])}</div></div>`).join("")).join("");
   const p=buildAiPitch(b);
-  return `<details data-fid="${esc(m.id)}" style="margin:8px 0"><summary><b>${esc(m.name||nameOf(m.id))}</b> <span class="status ok">filled</span></summary>`
+  return `<details data-fid="${esc(gid)}" style="margin:8px 0"><summary><span class="status ok">Worksheet B: filled</span><span class="status">${who}</span></summary>`
     +`<div style="padding:8px 0 0 12px">${rows}`
     +(p?`<div class="notice" style="margin-top:8px"><b>Pitch</b><pre style="white-space:pre-wrap;font:inherit;margin:4px 0 0">${esc(p)}</pre></div>`:"")
     +`</div></details>`;
@@ -42,7 +43,7 @@ async function saveGroups(groups){
   await db.doc("groupsPublished/ai").set(aiGroupsDoc);
 }
 // Drop empties, renumber.
-const tidy=groups=>groups.filter(g=>g.members&&g.members.length).map((g,i)=>({n:i+1,theme:g.theme,members:g.members}));
+const tidy=groups=>groups.filter(g=>g.members&&g.members.length).map((g,i)=>({n:i+1,gid:aiGid(g),theme:g.theme,members:g.members}));
 
 function moveSelect(fid,curN,groups){
   const opts=groups.filter(g=>g.n!==curN)
@@ -64,8 +65,7 @@ function groupCard(g,groups){
     +`<span class="status${over?" err":""}">${g.members.length}/${AI_MAX}${over?" — move one out":""}</span></h3>`
     +rows
     +`<div style="margin-top:10px;border-top:1px solid color-mix(in srgb,currentColor 15%,transparent);padding-top:8px">`
-    +`<div class="status">Worksheet B: ${g.members.filter(m=>bFilled(aiPlans[m.id])).length}/${g.members.length} filled</div>`
-    +g.members.map(bView).join("")+`</div></section>`;
+    +bView(g)+`</div></section>`;
 }
 function previewCard(g){
   return `<div class="notice" style="margin-bottom:8px"><b>Group ${g.n} · ${esc(g.theme)}</b> (${g.members.length})<br>`
@@ -96,7 +96,7 @@ function renderAiAdmin(){
     html=`<section class="block" style="margin-bottom:12px"><h3 style="margin-top:0">Worksheet B is open</h3>`
       +`<p class="sub">Groups are live. Move people with the dropdowns; changes save instantly.</p>`
       +`<div class="stats" style="margin:8px 0"><div class="stat"><b>${groups.length}</b><span>groups</span></div>`
-      +`<div class="stat"><b>${groups.reduce((a,g)=>a+g.members.filter(m=>bFilled(aiPlans[m.id])).length,0)}/${groups.reduce((a,g)=>a+g.members.length,0)}</b><span>Worksheet B filled</span></div></div>`
+      +`<div class="stat"><b>${groups.filter(g=>bFilled(aiSheets[aiGid(g)])).length}/${groups.length}</b><span>group sheets started</span></div></div>`
       +`<div class="actions"><button class="ghost" data-aireform="1">Re-form from current answers</button>`
       +`<button class="ghost" data-aistage="a">Reopen Worksheet A</button></div></section>`;
     html+=`<div class="aigrid">`+groups.map(g=>groupCard(g,groups)).join("")+`</div>`;
@@ -132,10 +132,10 @@ document.addEventListener("click",async e=>{
 document.addEventListener("change",async e=>{
   const sel=e.target.closest(".aimove");if(!sel||!db)return;
   const fid=sel.dataset.move,to=sel.value;if(!to)return;
-  let groups=((aiGroupsDoc&&aiGroupsDoc.groups)||[]).map(g=>({n:g.n,theme:g.theme,members:g.members.slice()}));
+  let groups=((aiGroupsDoc&&aiGroupsDoc.groups)||[]).map(g=>({n:g.n,gid:aiGid(g),theme:g.theme,members:g.members.slice()}));
   const p=eligible().find(x=>x.id===fid)||{id:fid,name:nameOf(fid),t1:""};
   groups.forEach(g=>{g.members=g.members.filter(m=>m.id!==fid);});
-  if(to==="new")groups.push({theme:p.t1||"Mixed themes",members:[{id:fid,name:p.name}]});
+  if(to==="new"){const th=p.t1||"Mixed themes";groups.push({gid:aiSlug(th)+"-x"+Date.now().toString(36),theme:th,members:[{id:fid,name:p.name}]});}
   else if(to[0]==="g"){const g=groups[parseInt(to.slice(1),10)-1];if(g)g.members.push({id:fid,name:p.name});}
   // to==="out" -> just removed (becomes unassigned)
   try{await saveGroups(tidy(groups));renderAiAdmin();}catch(err){renderAiAdmin();}
@@ -150,7 +150,7 @@ document.addEventListener("change",async e=>{
   try{const rs=await db.collection("roster").get();roster=rs.docs.map(d=>Object.assign({id:d.id},d.data()));roster.forEach(r=>rosterMap[r.id]=r);}catch(e){}
   db.doc("stage/ai").onSnapshot(s=>{aiStageDoc=s.exists?s.data():null;renderAiAdmin();},()=>{});
   db.doc("groupsPublished/ai").onSnapshot(s=>{aiGroupsDoc=s.exists?s.data():null;renderAiAdmin();},()=>{});
-  db.collection("plans").onSnapshot(s=>{aiPlans={};s.docs.forEach(d=>{if(d.id.indexOf("ai__")===0)aiPlans[d.id.slice(4)]=d.data();});renderAiAdmin();},()=>{});
+  db.collection("plans").onSnapshot(s=>{aiSheets={};s.docs.forEach(d=>{if(d.id.indexOf("ai__g_")===0)aiSheets[d.id.slice(6)]=d.data();});renderAiAdmin();},()=>{});
   db.collection("cards").onSnapshot(s=>{aiCards=s.docs.map(d=>Object.assign({id:d.id},d.data()));renderAiAdmin();},()=>{});
   renderAiAdmin();
 })();

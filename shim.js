@@ -59,13 +59,13 @@
   const refreshAll = (force) => { const n = Date.now(); ticks.forEach((t) => { if (force || n - (t.at || 0) >= COOL) t.run(); }); };
   if (CFG) { document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshAll(); }); window.addEventListener("focus", () => refreshAll()); window.addEventListener("hashchange", () => refreshAll()); }
   // Own save or a Realtime ping for one document: lists fetch just that document, single-document watchers re-read themselves.
-  const bump = (coll, id) => ticks.forEach((t) => { if (t.coll === coll) (t.ev && id !== undefined ? t.ev(id) : t.run()); });
+  const bump = (coll, id) => ticks.forEach((t) => { if (t.coll === coll && (t.id == null || id === undefined || t.id === id)) (t.ev && id !== undefined ? t.ev(id) : t.run()); });
   const watch = (get, cb, errCb, key, ev) => {
     let last = null, dead = false;
     if (key) { const c = cget(key); if (c !== null) { last = JSON.stringify(c); cb(c); } }
     const apply = (v) => { const j = JSON.stringify(v); if (key) cput(key, v); if (j !== last) { last = j; if (!dead) cb(v); } };
     const tick = async () => { reg.at = Date.now(); try { apply(await get()); } catch (e) { if (last !== "err") { last = "err"; errCb && errCb(e); } } };
-    const reg = { coll: key ? key.slice(2).split("/")[0] : null, run: tick, ev: ev ? async (id) => { try { const v = await ev(id); if (v) apply(v); else await tick(); } catch (e) {} } : null }; ticks.add(reg);
+    const reg = { coll: key ? key.slice(2).split("/")[0] : null, id: key && key[0] === "d" ? key.slice(2).split("/").slice(1).join("/") : null, run: tick, ev: ev ? async (id) => { try { const v = await ev(id); if (v) apply(v); else await tick(); } catch (e) {} } : null }; ticks.add(reg);
     tick(); const t = setInterval(() => { if (!(CFG && document.hidden)) tick(); }, POLL); return () => { dead = true; clearInterval(t); ticks.delete(reg); };
   };
   // Realtime ping (schema.sql: workshop_notify trigger). The ping carries only {collection, id}; each page then fetches that one document.
