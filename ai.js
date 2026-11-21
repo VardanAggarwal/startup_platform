@@ -26,20 +26,20 @@ const AI_THEMES=["Marketing & content","Sales & lead gen","Hiring & team","Ops &
 
 // Worksheet A (solo). Saved to cards/{founderId}.ai. Eligible for grouping = ai_t1 AND ai_t2 set.
 const CARD_AI=[
-  ["ai_tools","Which AI tools do I use this week? (e.g. Claude Code, Codex, ChatGPT, Cursor)","in"],
+  ["ai_tools","Which AI tools do I use today? (e.g. Claude Code, Codex, ChatGPT, Cursor)","in"],
   ["ai_comfort","How comfortable am I with AI? 1 = barely used it, 3 = use it weekly for a few tasks, 5 = build workflows/agents with it","sel",null,["1","2","3","4","5"]],
   ["ai_t1","My #1 priority theme","sel",null,AI_THEMES],
   ["ai_t2","My #2 priority theme","sel",null,AI_THEMES]
 ];
 
-// Worksheet B. One sheet per GROUP, saved to plans/ai__g_{gid}.
-// One member at a time is the editor ({editor:{id,name,at}}); everyone else sees it live, view-only.
+// Worksheet B (Phase 3). Per founder, private, saved to plans/ai__{founderId}.
+// Each founder fills their own; the group decides among themselves who pitches.
 const RATE15=["1","2","3","4","5"];
 const AIB=[
-  {h:"1 · One problem or process (pick one together)",f:[
-    ["ai_ps","The problem or process that eats our time or money","ta"],
-    ["ai_who","Who feels it most (founders, teams, customers…)","in"],
-    ["ai_cost","Roughly what it costs now (hrs/week or ₹)","in"]
+  {h:"1 · One problem or process in my business",f:[
+    ["ai_ps","The problem or process that eats my time or money","ta"],
+    ["ai_who","Who feels it most (me, my team, customers…)","in"],
+    ["ai_cost","Roughly what it costs me now (hrs/week or ₹)","in"]
   ]},
   {h:"2 · Two ways AI could help",f:[
     ["ai_s1","Option A — how AI could help","ta"],
@@ -49,17 +49,13 @@ const AIB=[
     ["ai_s2_imp","Option B — impact (1 low … 5 high)","sel",null,RATE15],
     ["ai_s2_eff","Option B — effort (1 easy … 5 hard)","sel",null,RATE15]
   ]},
-  {h:"3 · The one we'll try",f:[
-    ["ai_pick","The one we'll try","sel",null,["Option A","Option B"]],
-    ["ai_step","Our first step","ta"],
+  {h:"3 · The one I'll try",f:[
+    ["ai_pick","The one I'll try","sel",null,["Option A","Option B"]],
+    ["ai_step","My first step","ta"],
     ["ai_delta","What changes in 30 days if it works","ta"]
   ]}
 ];
 const BKEYS=AIB.reduce((a,s)=>a.concat(s.f.map(c=>c[0])),[]);
-// Stable id for a group's sheet. Old published groups without gid fall back to their number.
-const aiGid=g=>(g&&g.gid)||("n"+(g&&g.n));
-const aiSheetId=g=>"plans/ai__g_"+aiGid(g);
-const aiSlug=s=>String(s||"group").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"group";
 // impact ÷ effort, higher is a better bet. Returns "" when either side is missing.
 const aiBet=(imp,eff)=>{const i=+imp,e=+eff;return i&&e?(i/e).toFixed(2):"";};
 // Which option the founder is going with (explicit pick, else the better bet, else A).
@@ -70,7 +66,7 @@ function aiPickText(vb){
   if(a&&b)return(+a>=+b)?(vb.ai_s1||""):(vb.ai_s2||"");
   return vb.ai_s1||vb.ai_s2||"";
 }
-// Build the whole ~1-minute pitch from the group's B answers, as spoken
+// Build the whole ~1-minute pitch from the founder's own B answers, as spoken
 // sentences in three short paragraphs (problem, AI move, plan). No filler.
 // Skips empty fields; returns "" if there is nothing to say yet.
 function buildAiPitch(vb){
@@ -84,7 +80,7 @@ function buildAiPitch(vb){
 
   // 1. The problem
   let p1="";
-  if(ps)p1="The problem we keep running into is "+lc(ps)+".";
+  if(ps)p1="The problem I keep running into is "+lc(ps)+".";
   if(who&&cost)p1+=(p1?" ":"")+"It hits "+who+" hardest, and right now it costs about "+cost+".";
   else if(who)p1+=(p1?" ":"")+"It hits "+who+" hardest.";
   else if(cost)p1+=(p1?" ":"")+"Right now it costs about "+cost+".";
@@ -93,13 +89,13 @@ function buildAiPitch(vb){
   // 2. The AI move
   if(pick){
     const both=t(vb.ai_s1)&&t(vb.ai_s2);
-    P.push((P.length?"So here's":"Here's")+" our AI move: "+pick+"."
-      +(both?" We weighed two ideas and went with this one because it gives the most impact for the effort.":""));
+    P.push((P.length?"So here's":"Here's")+" my AI move: "+pick+"."
+      +(both?" I weighed two ideas and went with this one because it gives the most impact for the effort.":""));
   }
 
   // 3. The plan
   let p3="";
-  if(step)p3="Our first step is simple: "+lc(step)+".";
+  if(step)p3="My first step is simple: "+lc(step)+".";
   if(delta)p3+=(p3?" ":"")+"If it works, in 30 days "+lc(delta)+".";
   if(p3)P.push(p3);
 
@@ -140,8 +136,5 @@ function buildAiGroups(people){
     let host=groups.find((g,j)=>j!==i&&g.members.length<AI_MAX)
       ||groups.filter((g,j)=>j!==i).sort((a,b)=>a.members.length-b.members.length)[0];
     if(!host)break;host.members.push(groups[i].members[0]);groups.splice(i,1);}
-  // gid = theme slug + running count, so re-forming with the same answers keeps each group's sheet.
-  const seen={};
-  return groups.map((g,i)=>{const s=aiSlug(g.theme);seen[s]=(seen[s]||0)+1;
-    return{n:i+1,gid:s+"-"+seen[s],theme:g.theme,members:g.members.map(m=>({id:m.id,name:m.name}))};});
+  return groups.map((g,i)=>({n:i+1,theme:g.theme,members:g.members.map(m=>({id:m.id,name:m.name}))}));
 }
